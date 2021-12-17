@@ -99,6 +99,7 @@ class BWNetwork: AutomaticTask {
         ATRequestManager.send(data: API.HPImageArchive) { data, _ in
             if let data = data as? Data, let json = try? JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed) as? [String: Any] {
                 if let todayJson = json["images"] as? [[String:Any]], let first = todayJson.first {
+                    print(first)
                     var today = BWImage(json: first)
                     today.url = API.HPImageArchive.host + today.url
                     self.save(image: today)
@@ -118,6 +119,7 @@ class BWNetwork: AutomaticTask {
             return
         }
         let jsonURL = "bing-wallpaper.json".fullPath.toFileURL
+        print(jsonURL.absoluteString)
         do {
             let data = try Data(contentsOf: jsonURL)
             var imageJsonArrays = try JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed) as! [[String:Any]]
@@ -159,6 +161,7 @@ class BWNetwork: AutomaticTask {
             lines.append(string)
         }
         let url = "README.md".fullPath.toFileURL
+        print(url.absoluteString)
         try lines.joined(separator: "\n").write(to: url, atomically: true, encoding: .utf8)
     }
 }
