@@ -21,8 +21,8 @@ jobs:
       run: |
          git config --local user.email "yingguqing@gmail.com"
          git config --local user.name "yingguqing"
-         git add AutomaticTask/Sources/AutomaticTask/Module/BingWallpaper/bing-wallpaper.json
-         git add AutomaticTask/Sources/AutomaticTask/Module/BingWallpaper/README.md
+         git add Sources/AutomaticTask/Module/BingWallpaper/bing-wallpaper.json
+         git add Sources/AutomaticTask/Module/BingWallpaper/README.md
          git commit -m "update readme.md"
     
     - name: Push changes
