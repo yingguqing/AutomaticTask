@@ -33,7 +33,7 @@ enum ATPrintType: Int {
         #if DEBUG
         return text
         #else
-        let index = self == .Info ? Int((arc4random() % 5) + 34) : rawValue
+        let index = self == .Info ? Int.random(in: 34...37) : rawValue
         return "\033[7;30;\(index)m\(text)\033[0m"
         #endif
     }

@@ -202,7 +202,7 @@ class PicForum: ATBaseTask {
         // 版块id
         let fid = fids.removeFirst()
         // 页码
-        let page = Int(arc4random() % 7 + 3)
+        let page = Int.random(in: 3...10)
         let param: PFNetwork.APIData = .init(api: ["fid": String(fid), "page": String(page)])
         // 版本排序：最后发贴，防止 180 天以前的主題自動關閉，不再接受新回復
         let data = PFNetwork.html(data: .ForumList(param))
