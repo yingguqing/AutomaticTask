@@ -89,7 +89,7 @@ extension String {
     }
     
     /// 日期格式转换
-    func format(from:String, to:String) -> String {
+    func format(from: String, to: String) -> String {
         let dformatter = DateFormatter()
         dformatter.dateFormat = from
         if let date = dformatter.date(from: self) {
@@ -97,5 +97,71 @@ extension String {
             return dformatter.string(from: date)
         }
         return self
+    }
+    
+    /// 字符串异或加密
+    /// - Parameter key: 异或key
+    /// - Returns: 异或结果
+    func xorEncrypt(_ key: String) -> String {
+        guard let data = self.data(using: .utf8), let keyData = key.data(using: .utf8) else { return self }
+        return data.xorWith(keyData: keyData).base64EncodedString()
+    }
+    
+    func urlAppendPathComponent(_ api: String) -> String {
+        if !self.hasSuffix("/") && !api.hasPrefix("/") {
+            return "\(self)/\(api)"
+        } else if self.hasSuffix("/") || api.hasPrefix("/") {
+            return self.appending(api)
+        } else {
+            return self.appending(String(api.dropFirst()))
+        }
+    }
+    
+    var urlEncode: String {
+        var allowedQueryParamAndKey = NSCharacterSet.urlQueryAllowed
+        allowedQueryParamAndKey.remove(charactersIn: "!*'\"();:@&=+$,/?%#[]% ")
+        return self.addingPercentEncoding(withAllowedCharacters: allowedQueryParamAndKey) ?? self
+    }
+    
+    func urlAppend(params: [String: String]?) -> String {
+        guard let params = params, !params.isEmpty else { return self }
+        let paramString = params.map { "\($0.0.urlEncode)=\($0.1.urlEncode)" }.joined(separator: "&")
+        if self.isEmpty {
+            return paramString
+        } else {
+            return "\(self)&\(paramString)"
+        }
+    }
+    
+    enum StringRandomOptions {
+        case Digits // 数字
+        case LowerCase // 小写字母
+        case UpperCase // 大写字母
+        
+        var list: [String] {
+            switch self {
+                case .Digits:
+                    return "1234567890".map { String($0) }
+                case .LowerCase:
+                    return "abcdefghigklmnopqrstuvwxyz".map { String($0) }
+                case .UpperCase:
+                    return "ABCDEFGHIJKLMNOPQRSTUVWXYZ".map { String($0) }
+            }
+        }
+    }
+    
+    /// 随机字符串
+    /// - Parameters:
+    ///   - count: 长度
+    ///   - options: 类型
+    /// - Returns: 结果
+    static func random(_ count: Int, options: [StringRandomOptions] = [.Digits, .LowerCase, .UpperCase]) -> String {
+        guard count > 0, !options.isEmpty else { return "" }
+        let list = options.map { $0.list }.flatMap { $0 }.shuffled()
+        var result = [String]()
+        for _ in 0..<count {
+            result.append(list.randomElement()!)
+        }
+        return result.joined()
     }
 }

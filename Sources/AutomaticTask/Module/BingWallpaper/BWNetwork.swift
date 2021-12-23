@@ -7,9 +7,9 @@
 
 import Foundation
 
-class BWNetwork: AutomaticTask {
+class BWNetwork {
     
-    var finish: Bool = false
+    var finish: ((Bool)->Void)? = nil
     
     enum API: NetworkData {
         case HPImageArchive
@@ -36,23 +36,26 @@ class BWNetwork: AutomaticTask {
             return ["User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"]
         }
         
-        var params: [String: String]? {
+        var apiParams: [String: String]? {
             switch self {
                 case .HPImageArchive:
-                    var params = [String: String]()
-                    params["format"] = "js"
-                    params["idx"] = "0"
-                    params["n"] = "10"
-                    params["nc"] = "1612409408851"
-                    params["pid"] = "hp"
-                    params["FORM"] = "BEHPTB"
-                    params["uhd"] = "1"
-                    params["uhdwidth"] = "3840"
-                    params["uhdheight"] = "2160"
-                    return params
+                    return [
+                        "format": "js",
+                        "idx": "0",
+                        "n": "10",
+                        "nc": "1612409408851",
+                        "pid": "hp",
+                        "FORM": "BEHPTB",
+                        "uhd": "1",
+                        "uhdwidth": "3840",
+                        "uhdheight": "2160"
+                    ]
             }
         }
     }
+}
+
+extension BWNetwork {
     
     struct BWImage {
         var url: String
@@ -94,32 +97,37 @@ class BWNetwork: AutomaticTask {
             ]
         }
     }
-    
-    func getWallPaper() {
-        ATRequestManager.send(data: API.HPImageArchive) { data, _ in
-            if let data = data as? Data, let json = try? JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed) as? [String: Any] {
+}
+
+extension BWNetwork {
+    /// 获取壁纸
+    func getWallPaper(finish:((Bool)->Void)?) {
+        self.finish = finish
+        ATRequestManager.asyncSend(data: API.HPImageArchive) { data, _ in
+            if let json = data?.json as? [String: Any] {
                 if let todayJson = json["images"] as? [[String:Any]], let first = todayJson.first {
-                    print(first)
                     var today = BWImage(json: first)
                     today.url = API.HPImageArchive.host + today.url
                     self.save(image: today)
+                } else {
+                    finish?(false)
                 }
             }
         }
     }
     
-        /// 保存壁纸数据
-        /// - Parameter image: 今天的壁纸
+    /// 保存壁纸数据
+    /// - Parameter image: 今天的壁纸
     func save(image:BWImage?) {
         defer {
-            finish = true
+            finish?(true)
             debugPrint("壁纸完成")
         }
         guard let image = image else {
+            finish?(false)
             return
         }
         let jsonURL = "bing-wallpaper.json".fullPath.toFileURL
-        print(jsonURL.absoluteString)
         do {
             let data = try Data(contentsOf: jsonURL)
             var imageJsonArrays = try JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed) as! [[String:Any]]
@@ -134,13 +142,14 @@ class BWNetwork: AutomaticTask {
             }
         } catch {
             print("必应壁纸报错：\(error.localizedDescription)")
+            finish?(false)
         }
     }
     
-        /// 将壁纸内容写入到ReadMe.md中
-        /// - Parameters:
-        ///   - images: 历史壁纸
-        ///   - today: 今天的壁纸
+    /// 将壁纸内容写入到ReadMe.md中
+    /// - Parameters:
+    ///   - images: 历史壁纸
+    ///   - today: 今天的壁纸
     func writeReadMe(images:[BWImage], today:BWImage) throws {
         var lines = [String]()
         lines.append("## Bing Wallpaper")
@@ -161,7 +170,6 @@ class BWNetwork: AutomaticTask {
             lines.append(string)
         }
         let url = "README.md".fullPath.toFileURL
-        print(url.absoluteString)
         try lines.joined(separator: "\n").write(to: url, atomically: true, encoding: .utf8)
     }
 }

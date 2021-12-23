@@ -13,6 +13,7 @@ enum ATError:Error, LocalizedError {
     case ParamsInvalid
     case ResultFaild
     case Status(msg:String)
+    case Timeout
     case Error(_ error:Error)
     
     var errorDescription: String {
@@ -25,6 +26,8 @@ enum ATError:Error, LocalizedError {
                 return "参数不是字典，无效"
             case .ResultFaild:
                 return "网络返回结果解析失败"
+            case .Timeout:
+                return "请求超时"
             case .Status(let msg):
                 return msg
             case .Error(let error):

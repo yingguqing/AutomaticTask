@@ -15,7 +15,7 @@ jobs:
     - name: Build
       run: swift build
     - name: Run
-      run: swift run
+      run: swift run AutomaticTask -h
 
     - name: Commit files
       run: |
@@ -24,7 +24,7 @@ jobs:
          git add Sources/AutomaticTask/Module/BingWallpaper/bing-wallpaper.json
          git add Sources/AutomaticTask/Module/BingWallpaper/README.md
          git commit -m "update readme.md"
-    
+
     - name: Push changes
       uses:  ad-m/github-push-action@master
       with:
