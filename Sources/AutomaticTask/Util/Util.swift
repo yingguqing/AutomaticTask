@@ -58,7 +58,7 @@ extension Dictionary where Key == String {
     
     func value<T>(key:String, defaultValue:T) -> T {
         guard let value = self[key] else { return defaultValue }
-        if type(of: T.self) == Int.self {
+        if type(of: defaultValue) == Int.self {
             var result:Int? = nil
             if let val = value as? Int {
                 result = val
@@ -70,7 +70,7 @@ extension Dictionary where Key == String {
                 result = (val ? 1 : 0)
             }
             return result as? T ?? defaultValue
-        } else if type(of: T.self) == String.self {
+        } else if type(of: defaultValue) == String.self {
             var result:String? = nil
             if let val = value as? Int {
                 result = String(val)
@@ -82,7 +82,7 @@ extension Dictionary where Key == String {
                 result = (val ? "true" : "false")
             }
             return result as? T ?? defaultValue
-        } else if type(of: T.self) == Bool.self {
+        } else if type(of: defaultValue) == Bool.self {
             var result:Bool? = nil
             if let val = value as? Int {
                 result = val != 0
@@ -101,7 +101,7 @@ extension Dictionary where Key == String {
                 result = val
             }
             return result as? T ?? defaultValue
-        } else if type(of: T.self) == Double.self {
+        } else if type(of: defaultValue) == Double.self {
             var result:Double? = nil
             if let val = value as? Int {
                 result = Double(val)

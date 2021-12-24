@@ -13,18 +13,9 @@ class PFConfig {
     let xor: String
     let host: String
     let hostURL: String
-    let users: [PFUser]
-    
-    init(json: [String: Any]) {
-        let xor = json["xor"] as? String ?? ""
-        self.xor = xor
-        host = json["host"] as? String ?? ""
-        hostURL = json["hostURL"] as? String ?? ""
-        guard let accounts = json["accounts"] as? [[String: String]] else {
-            users = []
-            return
-        }
-        users = accounts.compactMap { PFUser(json: $0, xor: xor) }
+    let accounts: [[String: String]]
+    lazy var users: [PFUser] = {
+        let users = accounts.compactMap { PFUser(json: $0, xor: xor) }
         // 循环互换用户id用来访问空间，因为访问空间会增加金币
         if users.count > 1 {
             for (index, user) in users.enumerated() {
@@ -36,6 +27,15 @@ class PFConfig {
                 }
             }
         }
+        return users
+    }()
+    
+    init(json: [String: Any]) {
+        let xor = json["xor"] as? String ?? ""
+        self.xor = xor
+        host = json["host"] as? String ?? ""
+        hostURL = json["hostURL"] as? String ?? ""
+        accounts = json["accounts"] as? [[String: String]] ?? []
     }
     
     func fullURL(_ api: String) -> String {

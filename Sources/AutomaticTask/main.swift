@@ -30,12 +30,17 @@ struct Repeat: ParsableCommand {
                 }
                 PFConfig.default = PFConfig(json: json)
                 let pfNotice = ATNotice(json: json)
+                let group = DispatchGroup()
                 if let user = PFConfig.default.users.last {
                     let pic = PicForum(user: user, notice: pfNotice)
-                    DispatchQueue.global().async {
+                    taskArray.append(pic)
+                    DispatchQueue.global().async(group: group) {
                         pic.run()
                     }
-                    taskArray.append(pic)
+                }
+                group.notify(queue: .global()) {
+                    pfNotice.sendAllNotice(title: "比思")
+                    taskArray.append(pfNotice)
                 }
             } catch {
                 print("比思参数解析失败：\(error.localizedDescription)")

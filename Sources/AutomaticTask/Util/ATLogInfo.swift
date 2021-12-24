@@ -63,7 +63,7 @@ struct ATLogInfo: Safe {
         guard !logName.isEmpty else { return }
         let time = Date.nowString()
         let base = #file.deletingLastPathComponent.deletingLastPathComponent
-        let path = base.appending(pathComponent: "Logs/\(logName)")
+        let path = base.appending(pathComponent: "Logs/\(logName)-\(Date.today("YYYY-MM-dd")).txt")
         // 创建目录
         path.deletingLastPathComponent.createFilePath()
         do {
@@ -71,7 +71,7 @@ struct ATLogInfo: Safe {
             if path.fileExists {
                 logText = try String(contentsOfFile: path)
             }
-            logText = "\(time):\(log)" + logText
+            logText = "\(time):\(log)\n\n" + logText
             try logText.write(to: path.toFileURL, atomically: true, encoding: .utf8)
         } catch {
             Swift.print("保存日志到文件失败：\(error.localizedDescription)")
@@ -116,7 +116,7 @@ class ATPrintLog {
         if !isDebug || self.isDebug {
             logs.append(info)
         }
-        guard !self.isDebug else { return }
+        guard self.isDebug else { return }
         info.saveLogToText()
         info.print()
     }

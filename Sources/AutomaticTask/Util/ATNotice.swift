@@ -6,17 +6,8 @@
 //
 
 import Foundation
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
 
-struct ATNoticeValue {
-    let text: String
-    let index: Int
-}
-
-class ATNotice: Safe {
-    internal let semaphore = DispatchSemaphore(value: 1)
+class ATNotice: ATBaseTask {
     // 通知Key
     let noticeKey: String
     // 通知icon
@@ -40,31 +31,15 @@ class ATNotice: Safe {
     ///   - group: 消息分组
     func sendNotice(text: String, title: String = "", icon: String = "", group: String = "") {
         _wait(); defer { _signal() }
-        guard !noticeKey.isEmpty, !text.isEmpty else { return }
-        var urlString = "https://api.day.app/\(noticeKey)/"
-        var path = [String]()
-        // 加入标题
-        if !title.isEmpty {
-            path.append(title.urlEncode)
+        guard !noticeKey.isEmpty, !text.isEmpty else {
+            finish(.Success)
+            return
         }
-        // 加入内容
-        path.append(text.urlEncode)
-        urlString += path.joined(separator: "/")
-        var query = [String: String]()
-        // 知图标
-        if !icon.isEmpty {
-            query["icon"] = icon
-        }
-        // 消息分组
-        if !group.isEmpty {
-            query["group"] = group
-        }
-        
-        if !query.isEmpty {
-            urlString += "?\(query.map { "\($0.0)=\($0.1)" }.joined(separator: "&"))"
-        }
-        guard let url = URL(string: urlString) else { return }
-        let task = URLSession.shared.dataTask(with: url) { data, _, error in
+        var data = ATNoticeApiData(noticeKey: noticeKey, text: text)
+        data.title = title
+        data.icon = icon
+        data.group = group
+        ATRequestManager.asyncSend(data: data) { data, error in
             let json = data?.json as? [String: Any]
             let code = json?["code"] as? Int
             if code != 200 {
@@ -77,8 +52,8 @@ class ATNotice: Safe {
                 }
                 print("发送通知失败：\(msg)")
             }
+            self.finish(code != 200 ? .Faild : .Success)
         }
-        task.resume()
     }
     
     /// 往通知列表中插入一条
@@ -95,11 +70,42 @@ class ATNotice: Safe {
     /// - Parameter title: 通知标题
     func sendAllNotice(title: String) {
         _wait(); defer { _signal() }
-        guard !noticeKey.isEmpty, !notices.isEmpty else { return }
+        guard !noticeKey.isEmpty, !notices.isEmpty else {
+            finish(.Success)
+            return
+        }
         // 对通知进行排序
         let sortList = notices.sorted(by: { $0.index < $1.index })
         // 把列表中的消息拼接
         let text = sortList.map { $0.text }.joined(separator: "\n")
         sendNotice(text: text, title: title, icon: noticeIcon, group: groupName)
+    }
+}
+
+extension ATNotice {
+    struct ATNoticeValue {
+        let text: String
+        let index: Int
+    }
+    
+    struct ATNoticeApiData: NetworkData {
+        var api: String {
+            let arr = [noticeKey, title.urlEncode, text.urlEncode].filter { !$0.isEmpty }
+            let params = ["icon": icon, "group": group].filter { !$0.1.isEmpty }
+            var api = arr.joined(separator: "/")
+            if !params.isEmpty {
+                api.append("?")
+                api.append(params.map { "\($0.0)=\($0.1)" }.joined(separator: "&"))
+            }
+            return api
+        }
+        
+        var method: HttpMethod = .POST
+        let host: String = "https://api.day.app"
+        let noticeKey: String
+        var text: String // 通知内容
+        var title: String = "" // 通知标题
+        var icon: String = "" // 通知图标
+        var group: String = "" // 消息分组
     }
 }

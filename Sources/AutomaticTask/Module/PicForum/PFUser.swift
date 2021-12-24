@@ -24,14 +24,10 @@ class PFUser {
     var money: Int = 0
     // 序号
     var index: Int
-    // 是否是新手，新手最多发表10条评论，每天需要自动运行两次
-    let isNewBie: Bool
     // 日期
     let date: String
     // 历史数据中的日期是否是今天
     let isToday: Bool
-    // 上一次发表评论的时间，因为一个小时内只能发10条
-    var lastReplyTime: Double
     // 发表评论次数（新手1小时内限发10次，有奖次数为15次）
     var replyTimes: Int
     // 是否访问别人空间
@@ -45,7 +41,7 @@ class PFUser {
     // 分享次数
     var shareTimes: Int
     // 本次最大评论次数(有奖次数为15，小时内最大评论数为10)
-    var maxReplyTimes = 10
+    var maxReplyTimes = 15
     // 发表日志的最大次数
     let maxJournalTimes = 3
     // 最大分享次数
@@ -69,10 +65,10 @@ class PFUser {
         }
         name = userName
         self.password = password
-        saveKey = "HKPIC_CONFIG_\(userName.xorEncrypt(xor))"
+        saveKey = "HKPIC_CONFIG_\(userName.xorEncrypt(xor))".replacingOccurrences(of: "/", with: "$")
         var userConfig = ATConfig.default.read(key: saveKey) as? [String: Any] ?? [:]
         index = userConfig.value(key: "index", defaultValue: -1)
-        isNewBie = userConfig.value(key: "newbie", defaultValue: true)
+        otherUserId = userConfig.value(key: "other_user_id", defaultValue: 0)
         let userId = userConfig.value(key: "user_id", defaultValue: 0)
         self.userId = userId
         let _money = PFNetwork.userMoney(id: userId)
@@ -86,27 +82,23 @@ class PFUser {
         }
         // 历史金币：第一次运行时，从网页获取，第二次运行时，从数据文件读取
         historyMoney = userConfig.value(key: "history_money", defaultValue: _money)
-        lastReplyTime = userConfig.value(key: "last_reply_time", defaultValue: 0)
-        replyTimes = userConfig.value(key: "reply_times", defaultValue: 0)
+        replyTimes = userConfig.value(key: "reply_times", defaultValue: Int(0))
         isVisitOtherZone = userConfig.value(key: "is_visit_other_zone", defaultValue: true)
         isLeaveMessage = userConfig.value(key: "is_leave_message", defaultValue: true)
         isRecord = userConfig.value(key: "is_record", defaultValue: true)
-        journalTimes = userConfig.value(key: "journal_times", defaultValue: 0)
-        shareTimes = userConfig.value(key: "share_times", defaultValue: 0)
-        if replyTimes > 5 || !isNewBie {
-            maxReplyTimes = 15
-        }
+        journalTimes = userConfig.value(key: "journal_times", defaultValue: Int(0))
+        shareTimes = userConfig.value(key: "share_times", defaultValue: Int(0))
     }
     
     /// 重新获取金币数
     /// - Returns: 金币是否增加
     @discardableResult func reloadMoney() -> Bool {
-        var tempMoney = -1
-        for _ in [0...3] {
-            tempMoney = PFNetwork.userMoney(id: userId)
-            if tempMoney > -1, money < tempMoney {
+        for _ in [0...5] {
+            let tempMoney = PFNetwork.userMoney(id: userId)
+            if tempMoney > -1 {
+                let isMore = money < tempMoney
                 money = tempMoney
-                return true
+                return isMore
             }
         }
         return false
@@ -116,11 +108,7 @@ class PFUser {
 extension PFUser {
     /// 是否需要发表评论
     var canReply: Bool {
-        let reply = replyTimes < maxReplyTimes && maxReplyFailTimes > 0
-        if reply, isNewBie, replyTimes == 10 {
-            return Date().timeIntervalSince1970 - lastReplyTime > 3600
-        }
-        return reply
+        return replyTimes < maxReplyTimes && maxReplyFailTimes > 0
     }
     
     /// 是否需要发表日志
@@ -148,16 +136,15 @@ extension PFUser {
         var value: [String: Any] = [
             "name": name,
             "money": money,
-            "history_money": historyMoney,
+            "user_id": userId,
+            "other_user_id": otherUserId,
             "date": date,
             "is_visit_other_zone": isVisitOtherZone,
             "reply_times": replyTimes,
             "is_leave_message": isLeaveMessage,
             "is_record": isRecord,
             "journal_times": journalTimes,
-            "share_times": shareTimes,
-            "last_reply_time": lastReplyTime,
-            "newbie": isNewBie
+            "share_times": shareTimes
         ]
         
         if userId > 999 {
@@ -165,6 +152,9 @@ extension PFUser {
         }
         if index >= 0, index < 99 {
             value["index"] = index
+        }
+        if money >= historyMoney {
+            value["history_money"] = historyMoney
         }
         return value
     }
