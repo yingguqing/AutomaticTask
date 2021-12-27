@@ -16,7 +16,7 @@ struct Repeat: ParsableCommand {
 
     func run() {
         print("当前北京时间：\(Date.nowString())")
-        let star = Int(Date().timeIntervalSince1970)
+        let star = Date().timeIntervalSince1970
         var taskArray = SafeArray<AutomaticTask>()
         // 必应壁纸
         if bingWallpaper {
@@ -48,11 +48,13 @@ struct Repeat: ParsableCommand {
                 break
             }
             // 超时直接结束
-            if Int(Date().timeIntervalSince1970) - star >= timeout {
+            if Int(Date().timeIntervalSince1970 - star) >= timeout {
                 break
             }
             RunLoop.current.run(mode: .default, before: .init(timeIntervalSinceNow: 10))
         }
+        let time = Date().timeIntervalSince1970 - star
+        print("总时长：\(time.timeFromat)")
     }
 }
 Repeat.main()
