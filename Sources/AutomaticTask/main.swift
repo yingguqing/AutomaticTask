@@ -51,7 +51,7 @@ struct Repeat: ParsableCommand {
             if Int(Date().timeIntervalSince1970) - star >= timeout {
                 break
             }
-            sleep(1)
+            RunLoop.current.run(mode: .default, before: .init(timeIntervalSinceNow: 10))
         }
     }
 }

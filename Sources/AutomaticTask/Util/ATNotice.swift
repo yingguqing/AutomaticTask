@@ -41,7 +41,7 @@ class ATNotice: ATBaseTask {
         data.title = title
         data.icon = icon
         data.group = group
-        ATRequestManager.asyncSend(data: data) { data, error in
+        ATRequestManager.asyncSend(data: data) { data, _, error in
             let json = data?.json as? [String: Any]
             let code = json?["code"] as? Int
             if code != 200 {

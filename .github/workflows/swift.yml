@@ -1,6 +1,19 @@
 name: Swift
 
-on: [push]
+on: #[push]
+  # 定时任务
+  schedule:
+  #         ┌───────────────────── minute (0 - 59)
+  #         │ ┌─────────────────── hour (0 - 23)
+  #         │ │ ┌───────────────── day of the month (1 - 31)
+  #         │ │ │ ┌─────────────── month (1 - 12 or JAN-DEC)
+  #         │ │ │ │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+  #         │ │ │ │ │                                   
+  #         │ │ │ │ │
+  #         │ │ │ │ │
+  #         * * * * *
+  - cron:  '0 17 * * *'
+
 
 jobs:
   build:

@@ -12,16 +12,19 @@ import FoundationNetworking
 
 struct PFResult {
     let html: String
+    let cookies:[String:String]
     let error: ATError?
     let success: Bool
     
-    init(html: String) {
+    init(html: String, cookies:[String:String]) {
         self.html = html
+        self.cookies = cookies
         self.error = nil
         self.success = true
     }
     
     init(error: ATError?) {
+        self.cookies = [:]
         self.error = error
         self.html = ""
         self.success = false
@@ -65,12 +68,14 @@ class PFNetwork {
         var apiValue: [String: String]
         var body: [String: String]
         var type: API = .Home
+        var cookies: [String:String]
         
         init(header: [String: String] = [:], api: [String: String] = [:], body: [String: String] = [:], _ type: API) {
             self.header = header
             self.apiValue = api
             self.body = body
             self.type = type
+            self.cookies = [:]
         }
         
         var headerFields: [String: String?]? {
@@ -107,14 +112,12 @@ class PFNetwork {
             return getAPI.contains(type) ? .GET : .POST
         }
         
-        var cookies: String? {
+        var cookieString: String? {
             guard type != .Login else {
                 // 登录时，自动清除cookies
-                ATRequestManager.cleanCookie(url: url)
                 return nil
             }
-            guard let url = self.url, let cookies = HTTPCookieStorage.shared.cookies(for: url) else { return "" }
-            let cookieString = cookies.map { "\($0.name)=\($0.value)" }.joined(separator: "; ")
+            let cookieString = cookies.map { "\($0.0)=\($0.1)" }.joined(separator: "; ")
             return cookieString
         }
     }
@@ -258,12 +261,12 @@ extension PFNetwork {
         if htmlString?.contains("400 Bad Request") == true, failTimes < 5 {
             return html(data: data, title: title, failTimes: failTimes + 1)
         } else if let htmlString = htmlString {
-            return PFResult(html: htmlString)
-        } else if resultData.1?.code == ATError.Timeout.code, failTimes < 5 {
+            return PFResult(html: htmlString, cookies: resultData.1)
+        } else if resultData.2?.code == ATError.Timeout.code, failTimes < 5 {
             return html(data: data, title: title, failTimes: failTimes + 1)
         } else {
-            print("\(title.isEmpty ? data.type.rawValue : title)失败：\(resultData.1?.localizedDescription ?? "")")
-            return PFResult(error: resultData.1)
+            print("\(title.isEmpty ? data.type.rawValue : title)失败：\(resultData.2?.localizedDescription ?? "")")
+            return PFResult(error: resultData.2)
         }
     }
     

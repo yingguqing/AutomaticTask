@@ -33,7 +33,6 @@ enum PicType: String {
 
 // 比思
 class PicForum: ATBaseTask {
-    
     // 开始时间
     let starTime: Double = Date().timeIntervalSince1970
     // 休息时长
@@ -86,6 +85,8 @@ class PicForum: ATBaseTask {
     
     // 网络请求的默认数据
     lazy var defaultData: PFNetwork.PFNetworkData = PFNetwork.PFNetworkData(header: PFNetwork.PFNetworkData.defaultHeader, .Home)
+    // 请求用到的cookie
+    var cookies = [String: String]()
     
     init(user: PFUser, notice: ATNotice) {
         self.user = user
@@ -97,9 +98,12 @@ class PicForum: ATBaseTask {
     }
     
     func run() {
+        defer {
+            runFinish()
+        }
         log.print(text: "------------- \(user.name) 比思签到 -------------", type: .Normal)
         // 登录
-        login()
+        guard login() else { return }
         // 签到
         signIn()
         // 评论
@@ -127,13 +131,16 @@ class PicForum: ATBaseTask {
         user.save()
         log.print(text: "金钱：\(user.money)", type: .White)
         log.print(text: "休息：\(Double(sleepTime).timeFromat)", type: .White)
+    }
+    
+    private func runFinish() {
         // 统计执行时长
         let total = Date().timeIntervalSince1970 - starTime
         log.print(text: "------------- 签到完成,耗时\(total.timeFromat) -------------", type: .Normal)
         log.printLog()
+        finish()
         notice.addNotice(text: "\(user.name):\(user.money)", index: user.index)
         notice.sendAllNotice(title: "比思", targetName: user.name)
-        finish()
     }
     
     // MARK: 访问首页
@@ -144,25 +151,19 @@ class PicForum: ATBaseTask {
     ///   - isCheckHost: 是否测试域名
     ///   - complete: 完成回调
     private func forum(host: String? = nil, isCheckHost: Bool = false) {
-        let data = PFNetwork.html(data: defaultData)
-        var isLogin = false
+        let data = network(data: defaultData)
         // 提取自己的用户id
         let regex = try! Regex("<a\\s*href=\"space-uid-(\\d{5,}).html\"\\s*target=\"_blank\"\\s*title=\"訪問我的空間\">\(user.name)</a>")
         if let userId = regex.firstGroup(in: data.html), let id = Int(userId) {
             user.userId = id
-            isLogin = true
         }
         // 是否需要签到
         isSignIn = data.findSuccess(txt: "簽到領獎!")
         
         // 提取formhash
-        if formhash.isEmpty {
-            let regex = try! Regex("formhash=(\\w+)")
-            if let formhash = regex.firstGroup(in: data.html), formhash.count > 3 {
-                self.formhash = formhash
-            } else if isLogin {
-                formhash = ""
-            }
+        let formhashRegex = try! Regex("formhash=(\\w+)")
+        if let formhash = formhashRegex.firstGroup(in: data.html) {
+            self.formhash = formhash.trimmingCharacters(in: .whitespaces)
         }
         
         // 没有别人的空间地址时，提取首页随便一个人非自己的空间地址
@@ -177,15 +178,23 @@ class PicForum: ATBaseTask {
     
     // MARK: 登录
     
-    private func login() {
+    private func login() -> Bool {
         formhash = ""
         var param = defaultData
         param.body = ["username": user.name, "password": user.password]
         param.type = .Login
-        let data = PFNetwork.html(data: param)
-        forum()
-        guard formhash.isEmpty else { return }
-        log.print(texts: ["登录失败", data.html], type: .Faild)
+        cookies.removeAll()
+        let data = network(data: param)
+        cookies = data.cookies
+        if data.findSuccess(txt: defaultData.url!.absoluteString) {
+            forum()
+            guard formhash.isEmpty else { return true }
+            log.print(text: "formhash获取失败", type: .Faild)
+            return false
+        } else {
+            log.print(texts: ["登录失败", data.html], type: .Faild)
+            return false
+        }
     }
     
     // MARK: 签到
@@ -195,7 +204,7 @@ class PicForum: ATBaseTask {
         var param = defaultData
         param.body = ["formhash": formhash]
         param.type = .SignIn
-        let data = PFNetwork.html(data: param)
+        let data = network(data: param)
         let regex = try! Regex("<div\\s+class\\s*=\\s*\"c\"\\s*>\\W*(.*?)\\W*<\\s*/\\s*div\\s*>")
         if let text = regex.firstGroup(in: data.html) {
             log.print(text: text, type: .Success)
@@ -218,7 +227,7 @@ class PicForum: ATBaseTask {
         param.apiValue = ["fid": String(fid), "page": String(page)]
         param.type = .ForumList
         // 版本排序：最后发贴，防止 180 天以前的主題自動關閉，不再接受新回復
-        let data = PFNetwork.html(data: param)
+        let data = network(data: param)
         if isFirst {
             let regex = try! Regex("<a\\s*href=\"forum-\(fid)-1.html\">(.*?)</a>")
             if let first = regex.firstGroup(in: data.html) {
@@ -261,7 +270,7 @@ class PicForum: ATBaseTask {
         param.apiValue = ["fid": "\(fid)", "tid": tid]
         param.body = ["message": comment, "formhash": formhash, "posttime": "\(Int(Date().timeIntervalSince1970))"]
         param.type = .Reply
-        let data = PFNetwork.html(data: param)
+        let data = network(data: param)
         // 评论有时间间隔限制
         waitSleep(type: .Reply)
         if data.findSuccess(txt: "非常感謝，回復發佈成功") {
@@ -303,7 +312,7 @@ class PicForum: ATBaseTask {
             var param = defaultData
             param.apiValue = ["uid": "\(user.otherUserId)"]
             param.type = .Zone
-            PFNetwork.html(data: param, title: "访问别人空间")
+            network(data: param, title: "访问别人空间")
             user.isVisitOtherZone = false
             user.save()
         } else {
@@ -319,7 +328,7 @@ class PicForum: ATBaseTask {
         var param = defaultData
         param.body = ["refer": refer, "formhash": formhash, "id": "\(user.otherUserId)", "handlekey": "commentwall_\(user.otherUserId)", "message": "留个言，赚个金币。"]
         param.type = .LeavMessage
-        let data = PFNetwork.html(data: param)
+        let data = network(data: param)
         waitSleep(type: .LeaveMessage)
         if data.findSuccess() {
             log.debugPrint(text: "留言成功", type: .Success)
@@ -360,13 +369,13 @@ class PicForum: ATBaseTask {
         frontParam.apiValue = ["cid": cId, "handlekey": "c_\(cId)_delete", "ajaxtarget": "fwin_content_c_\(cId)_delete"]
         frontParam.type = .DeleteMessageFront
         // 获取删除留言相关参数
-        PFNetwork.html(data: frontParam)
+        network(data: frontParam)
         // 请求删除留言
         var param = defaultData
         param.apiValue = ["cid": cId]
         param.body = ["handlekey": "c_\(cId)_delete", "formhash": formhash, "referer": refer]
         param.type = .DeleteMessage
-        let data = PFNetwork.html(data: param)
+        let data = network(data: param)
         if data.findSuccess() {
             log.debugPrint(text: "删除留言成功", type: .Success)
             waitSleep(type: .Other)
@@ -383,7 +392,7 @@ class PicForum: ATBaseTask {
         var param = defaultData
         param.apiValue = ["uid": "\(user.userId)"]
         param.type = .LeavMessageDynamicList
-        let data = PFNetwork.html(data: param)
+        let data = network(data: param)
         let regex = try! Regex("\"home.php\\?mod=spacecp&amp;ac=feed&amp;op=menu&amp;feedid=(\\d+)\"")
         let feedids = regex.matches(in: data.html).map { $0.captures.compactMap { $0 } }.flatMap { $0 }
         guard !feedids.isEmpty else { return }
@@ -407,14 +416,14 @@ class PicForum: ATBaseTask {
         frontParam.apiValue = ["feedid": feedid, "handlekey": "a_feed_menu_\(feedid)", "ajaxtarget": "fwin_content_a_feed_menu_\(feedid)"]
         frontParam.type = .DeleteLeavMessageDynamicFront
         // 获取删除动态相关参数
-        PFNetwork.html(data: frontParam)
+        network(data: frontParam)
         
         // 删除动态
         var param = defaultData
         param.apiValue = ["feedid": feedid, "handlekey": "a_feed_menu_\(feedid)"]
         param.body = ["referer": referer, "formhash": formhash]
         param.type = .DeleteLeavMessageDynamic
-        let data = PFNetwork.html(data: param)
+        let data = network(data: param)
         if data.findSuccess() {
             log.debugPrint(text: "一条动态删除成功", type: .Success)
         } else {
@@ -433,7 +442,7 @@ class PicForum: ATBaseTask {
         param.header["Referer"] = PFConfig.default.fullURL(referer)
         param.body = ["message": message, "formhash": formhash, "referer": referer]
         param.type = .Record
-        let data = PFNetwork.html(data: param)
+        let data = network(data: param)
         waitSleep(type: .Record)
         if data.findSuccess(txt: message) {
             log.debugPrint(text: "记录：「\(message)」-> 发表成功", type: .Success)
@@ -457,7 +466,7 @@ class PicForum: ATBaseTask {
         var param = defaultData
         param.apiValue = ["uid": "\(user.userId)"]
         param.type = .FindAllRecord
-        let html = PFNetwork.html(data: param).html
+        let html = network(data: param).html
         // group1: 标题，group2：id。筛选条件：标题是预设的评论内容
         let regex = try! Regex("<span>\\s*(.*?)\\s*</span>\\s*</dd>\\s*<dd\\s+class\\s*=\\s*\".*?\"\\s+id=\"(.*?)\"\\s+style\\s*=\\s*\"display:none;\"\\s*>", options: [.ignoreCase])
         let ids = regex.matches(in: html).map { $0.captures.compactMap { $0 } }.filter { $0.count == 2 && comments.contains($0[0]) }.map { $0[1] }
@@ -467,7 +476,7 @@ class PicForum: ATBaseTask {
     // MARK: 删除记录
     
     private func deleteRecord() {
-        //login()
+        // login()
         let ids = findAllRecord()
         guard !ids.isEmpty else { return }
         let referer = PFConfig.default.fullURL("home.php?mod=space&do=doing&view=me")
@@ -480,13 +489,13 @@ class PicForum: ATBaseTask {
             var frontParam = defaultData
             frontParam.apiValue = ["doid": doid, "handlekey": handlekey, "ajaxtarget": "fwin_content_\(star)_doing_delete_\(doid)_"]
             frontParam.type = .DeleteRecordFront
-            PFNetwork.html(data: frontParam)
+            network(data: frontParam)
             
             var param = defaultData
             param.apiValue = ["doid": doid]
             param.body = ["handlekey": handlekey, "formhash": formhash, "referer": referer]
             param.type = .DeleteRecord
-            PFNetwork.html(data: param)
+            network(data: param)
         }
     }
     
@@ -519,7 +528,7 @@ class PicForum: ATBaseTask {
             "blogsubmit": "true"
         ]
         param.type = .Journal
-        let data = PFNetwork.html(data: param)
+        let data = network(data: param)
         waitSleep(type: .Journal)
         if data.findSuccess(txt: title) {
             user.journalTimes += 1
@@ -550,7 +559,7 @@ class PicForum: ATBaseTask {
         var param = defaultData
         param.apiValue = ["uid": "\(user.userId)"]
         param.type = .AllJournals
-        let html = PFNetwork.html(data: param).html
+        let html = network(data: param).html
         let regex = try! Regex("<a\\s+href\\s*=\\s*\"blog-(\\d+)-(\\d+).html\"\\s+target\\s*=\\s*\"_blank\"\\s*>\\s*(.*?)\\s*</a>")
         let allBlogids = regex.matches(in: html).map { $0.captures.compactMap { $0 } }.filter { $0.count == 3 && $0[2].hasPrefix("我的日志") }.map { $0[1] }
         return allBlogids
@@ -572,7 +581,7 @@ class PicForum: ATBaseTask {
         param.apiValue = ["blogid": id]
         param.body = ["formhash": formhash, "referer": referer]
         param.type = .DelJournal
-        PFNetwork.html(data: param)
+        network(data: param)
         waitSleep(type: .Other)
         let allBlogIds = allJournals(isShowLine: false)
         var times = delTimes
@@ -597,7 +606,7 @@ class PicForum: ATBaseTask {
         param.header["Referer"] = PFConfig.default.fullURL(referer)
         param.body = ["formhash": formhash, "referer": referer, "link": "https://www.baidu.com", "general": comments.randomElement()!]
         param.type = .Share
-        let data = PFNetwork.html(data: param)
+        let data = network(data: param)
         waitSleep(type: .Share)
         if data.findSuccess() {
             user.shareTimes += 1
@@ -643,13 +652,28 @@ class PicForum: ATBaseTask {
         param.apiValue = ["sid": sid]
         param.body = ["formhash": formhash, "referer": referer, "handlekey": "s_\(sid)_delete"]
         param.type = .DeleteShare
-        let data = PFNetwork.html(data: param)
+        let data = network(data: param)
         if data.findSuccess() {
             log.debugPrint(text: "删除分享成功", type: .Success)
         } else {
             log.print(texts: data.errorData, type: .Faild)
             log.print(text: "删除分享失败", type: .Faild)
         }
+    }
+    
+    /// 网络请求，自动处理cookie相关数据
+    /// - Parameter data: 网络数据
+    /// - Parameter title: 标题
+    /// - Parameter isSetCookie: 请求是否带上cookie
+    /// - Parameter isSaveCookie: 是否保存网络返回的cookie
+    /// - Returns: 网络结果
+    @discardableResult private func network(data: PFNetwork.PFNetworkData, title: String = "", isSetCookie: Bool = true, isSaveCookie: Bool = true) -> PFResult {
+        var param = data
+        param.cookies = cookies
+        let result = PFNetwork.html(data: param, title: title)
+        // 合并cookie
+        cookies = cookies.merging(result.cookies, uniquingKeysWith: { (_, new) in new })
+        return result
     }
     
     /// 休息等待
