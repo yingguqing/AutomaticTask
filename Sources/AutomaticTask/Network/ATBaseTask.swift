@@ -9,27 +9,18 @@ import Foundation
 
 class ATBaseTask: SafeClass, AutomaticTask {
     
-    enum TaskType {
-        case Ready // 准备
-        case Success // 成功
-        case Faild // 失败
-        case Running // 运行中
-        
-        var isFinish:Bool {
-            return self != .Running && self != .Ready
-        }
+    var timeout: Int = 60
+    
+    // 结束标识
+    private var _finish = false
+    
+    func finish(_ finish:Bool=true) {
+        _wait(); defer { _signal() }
+        _finish = finish
     }
     
-    // 功能是否结束标识
-    private var _taskType: TaskType = .Ready
-    
-    func finish(_ type:TaskType) {
+    func isFinish() -> Bool {
         _wait(); defer { _signal() }
-        _taskType = type
-    }
-    
-    func finish() -> Bool {
-        _wait(); defer { _signal() }
-        return _taskType.isFinish
+        return _finish
     }
 }

@@ -46,6 +46,8 @@ class PicForum: ATBaseTask {
     var formhash = ""
     // 是否需要签到
     var isSignIn = false
+    // 记录发表状态，用于休息
+    var isSend = false
     // 日志系统
     let log: ATPrintLog
     // 帖子较多的板块
@@ -89,6 +91,8 @@ class PicForum: ATBaseTask {
         self.user = user
         self.notice = notice
         self.log = ATPrintLog(title: user.name)
+        super.init()
+        super.timeout = 1200
         #if DEBUG
         log.logName = "bisi"
         #endif
@@ -104,6 +108,8 @@ class PicForum: ATBaseTask {
         forumList(true)
         // 访问别人空间并留言
         visitUserZone()
+        // 留言
+        leavMessage()
         // 发表一条记录
         record()
         // 删除发表的记录
@@ -120,7 +126,6 @@ class PicForum: ATBaseTask {
         if user.historyMoney > -1 {
             log.debugPrint(text: "增加金币：\(user.money - user.historyMoney)", type: .Cyan)
         }
-        notice.addNotice(text: "\(user.name):\(user.money)", index: user.index)
         user.save()
         log.print(text: "金钱：\(user.money)", type: .White)
         log.print(text: "休息：\(Double(sleepTime).timeFromat)", type: .White)
@@ -128,7 +133,9 @@ class PicForum: ATBaseTask {
         let total = Date().timeIntervalSince1970 - starTime
         log.print(text: "------------- 签到完成,耗时\(total.timeFromat) -------------", type: .Normal)
         log.printLog()
-        finish(.Success)
+        notice.addNotice(text: "\(user.name):\(user.money)", index: user.index)
+        notice.sendAllNotice(title: "比思", targetName: user.name)
+        finish()
     }
     
     // MARK: 访问首页
@@ -235,7 +242,6 @@ class PicForum: ATBaseTask {
             }
         }
         // 评论数不够15条时，获取另一批帖子
-        guard user.canReply else { return }
         forumList()
     }
     
@@ -302,7 +308,6 @@ class PicForum: ATBaseTask {
             PFNetwork.html(data: param, title: "访问别人空间")
             user.isVisitOtherZone = false
             user.save()
-            leavMessage()
         } else {
             log.print(text: "别人id不存在，不能访问别人空间", type: .Faild)
         }
@@ -537,7 +542,7 @@ class PicForum: ATBaseTask {
         // 发表有时间间隔限制
         if user.canJournal {
             journal()
-        } else {
+        } else if user.maxJournalFailTimes <= 0 {
             log.print(text: "发表日志失败，超过最大失败次数。", type: .Faild)
         }
     }
@@ -656,8 +661,11 @@ class PicForum: ATBaseTask {
     /// - Parameters:
     ///   - type: 休息类型
     private func waitSleep(type: PicType) {
-        sleepTime += type.sleepSec
-        log.debugPrint(text: "\(type.rawValue)休息 \(type.sleepSec) 秒", type: .White)
-        sleep(type.sleepSec)
+        if (isSend && type.sleepSec > 0) {
+            sleepTime += type.sleepSec
+            log.debugPrint(text: "\(type.rawValue)休息 \(type.sleepSec) 秒", type: .White)
+            sleep(type.sleepSec)
+        }
+        isSend = true
     }
 }

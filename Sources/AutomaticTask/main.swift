@@ -15,7 +15,10 @@ struct Repeat: ParsableCommand {
     var bingWallpaper = false
 
     func run() {
+        print("当前北京时间：\(Date.nowString())")
+        let star = Int(Date().timeIntervalSince1970)
         var taskArray = SafeArray<AutomaticTask>()
+        // 必应壁纸
         if bingWallpaper {
             let bw = BingWallpaper()
             DispatchQueue.global().async {
@@ -23,35 +26,32 @@ struct Repeat: ParsableCommand {
             }
             taskArray.append(bw)
         }
-        if let data = picForum?.data(using: .utf8) {
-            do {
-                guard let json = try JSONSerialization.jsonObject(with: data, options: .mutableLeaves) as? [String: Any] else {
-                    return
+        
+        // 比思签到
+        if let data = picForum?.data(using: .utf8), let json = data.json as? [String: Any] {
+            PFConfig.default = PFConfig(json: json)
+            let pfNotice = ATNotice(json: json)
+            taskArray.append(pfNotice)
+            PFConfig.default.users.forEach {
+                let pic = PicForum(user: $0, notice: pfNotice)
+                pfNotice.targetCounts += 1
+                taskArray.append(pic)
+                DispatchQueue.global().async {
+                    pic.run()
                 }
-                PFConfig.default = PFConfig(json: json)
-                let pfNotice = ATNotice(json: json)
-                let group = DispatchGroup()
-                if let user = PFConfig.default.users.last {
-                    let pic = PicForum(user: user, notice: pfNotice)
-                    taskArray.append(pic)
-                    DispatchQueue.global().async(group: group) {
-                        pic.run()
-                    }
-                }
-                group.notify(queue: .global()) {
-                    pfNotice.sendAllNotice(title: "比思")
-                    taskArray.append(pfNotice)
-                }
-            } catch {
-                print("比思参数解析失败：\(error.localizedDescription)")
             }
         }
-        var index = 0
-        while index < 3600 {
-            if taskArray.filter({ !$0.finish() }).isEmpty {
+        // 取出所有进程里超时时长最大值 * 2
+        let timeout = (taskArray.map({ $0.timeout }).max() ?? 1200) * 2
+        while true {
+            print(taskArray.map({ "\($0.self):\($0.isFinish())" }))
+            if taskArray.filter({ !$0.isFinish() }).isEmpty {
                 break
             }
-            index += 1
+            // 超时直接结束
+            if Int(Date().timeIntervalSince1970) - star >= timeout {
+                break
+            }
             sleep(1)
         }
     }

@@ -12,8 +12,8 @@ class BingWallpaper: ATBaseTask {
     func run() {
         DispatchQueue.global().async {
             let net = BWNetwork()
-            net.getWallPaper { flag in
-                self.finish(flag ? .Success : .Faild)
+            net.getWallPaper { _ in
+                self.finish()
             }
         }
     }

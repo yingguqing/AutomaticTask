@@ -16,6 +16,9 @@ class ATNotice: ATBaseTask {
     let groupName: String
     // 记录所有通知
     private var notices = SafeArray<ATNoticeValue>()
+    private var targetNames = SafeArray<String>()
+    // 接收通知的目标数
+    var targetCounts = 0
     
     init(json: [String: Any]) {
         noticeKey = json.value(key: "noticeKey", defaultValue: "")
@@ -29,10 +32,9 @@ class ATNotice: ATBaseTask {
     ///   - title: 通知标题(可以为空)
     ///   - icon: 通知图标
     ///   - group: 消息分组
-    func sendNotice(text: String, title: String = "", icon: String = "", group: String = "") {
-        _wait(); defer { _signal() }
+    func sendNotice(text: String, title: String = "", icon: String = "", group: String = "", isFinish:Bool=true) {
         guard !noticeKey.isEmpty, !text.isEmpty else {
-            finish(.Success)
+            finish(isFinish)
             return
         }
         var data = ATNoticeApiData(noticeKey: noticeKey, text: text)
@@ -52,7 +54,7 @@ class ATNotice: ATBaseTask {
                 }
                 print("发送通知失败：\(msg)")
             }
-            self.finish(code != 200 ? .Faild : .Success)
+            self.finish(isFinish)
         }
     }
     
@@ -66,12 +68,15 @@ class ATNotice: ATBaseTask {
         notices.append(noti)
     }
     
-    /// 将通知列表中的消息全部发送
-    /// - Parameter title: 通知标题
-    func sendAllNotice(title: String) {
+        /// 将通知列表中的消息全部发送
+        /// - Parameter title: 通知标题
+        /// - Parameter targetName: 接收通知的目标名称
+    func sendAllNotice(title: String, targetName:String) {
         _wait(); defer { _signal() }
+        targetNames.append(targetName)
+        guard Set(targetNames).count == targetCounts else { return }
         guard !noticeKey.isEmpty, !notices.isEmpty else {
-            finish(.Success)
+            finish()
             return
         }
         // 对通知进行排序
@@ -95,7 +100,7 @@ extension ATNotice {
             var api = arr.joined(separator: "/")
             if !params.isEmpty {
                 api.append("?")
-                api.append(params.map { "\($0.0)=\($0.1)" }.joined(separator: "&"))
+                api.append(params.map { "\($0.0)=\($0.1.urlEncode)" }.joined(separator: "&"))
             }
             return api
         }
