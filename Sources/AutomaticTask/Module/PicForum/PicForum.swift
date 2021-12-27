@@ -93,9 +93,7 @@ class PicForum: ATBaseTask {
         self.log = ATPrintLog(title: user.name)
         super.init()
         super.timeout = 1200
-        #if DEBUG
         log.logName = "bisi"
-        #endif
     }
     
     func run() {
