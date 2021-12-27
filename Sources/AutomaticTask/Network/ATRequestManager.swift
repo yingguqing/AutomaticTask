@@ -83,7 +83,7 @@ extension NetworkData {
 
 class ATRequestManager {
     private init() {}
-
+    
     /// 异步发送网络请求
     /// - Parameters:
     ///   - data: 请求URL数据
@@ -131,19 +131,19 @@ class ATRequestManager {
             }
             returnData = data
             returnError = ATError(error: error)
-            complete?(data, ATError(error: error))
+            complete?(data, returnError)
         }
         task.resume()
-        if !isAsync {
-            // 计算超时的最终时间戳
-            let end = Date().timeIntervalSince1970 + request.timeoutInterval
-            while returnData == nil && returnError == nil {
-                _ = RunLoop.current.run(mode: .default, before: .init(timeIntervalSinceNow: 1))
-                if Date().timeIntervalSince1970 >= end {
-                    returnError = .Timeout
-                    task.cancel()
-                    break
-                }
+        // 同步请求
+        guard !isAsync else { return (returnData, returnError) }
+        // 计算超时的最终时间戳
+        let end = Date().timeIntervalSince1970 + request.timeoutInterval + 5
+        while returnData == nil && returnError == nil {
+            _ = RunLoop.current.run(mode: .default, before: .init(timeIntervalSinceNow: 1))
+            if Date().timeIntervalSince1970 >= end {
+                returnError = .Timeout
+                task.cancel()
+                break
             }
         }
         return (returnData, returnError)

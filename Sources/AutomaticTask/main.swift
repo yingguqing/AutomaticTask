@@ -44,7 +44,6 @@ struct Repeat: ParsableCommand {
         // 取出所有进程里超时时长最大值 * 2
         let timeout = (taskArray.map({ $0.timeout }).max() ?? 1200) * 2
         while true {
-            print(taskArray.map({ "\($0.self):\($0.isFinish())" }))
             if taskArray.filter({ !$0.isFinish() }).isEmpty {
                 break
             }
@@ -57,3 +56,4 @@ struct Repeat: ParsableCommand {
     }
 }
 Repeat.main()
+

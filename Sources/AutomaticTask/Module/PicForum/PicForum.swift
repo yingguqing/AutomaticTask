@@ -255,8 +255,6 @@ class PicForum: ATBaseTask {
     ///   - name: 帖子名称
     /// - Returns: 是否成功发表
     private func reply(comment: String, fid: Int, tid: String, name: String) -> Bool {
-        // 评论有时间间隔限制
-        waitSleep(type: .Reply)
         let _url = PFConfig.default.fullURL("thread-\(tid)-1-1.html")
         log.debugPrint(text: "进入帖子->\(name)：\(_url)", type: .Info)
         // 发表评论前的金币数
@@ -266,6 +264,8 @@ class PicForum: ATBaseTask {
         param.body = ["message": comment, "formhash": formhash, "posttime": "\(Int(Date().timeIntervalSince1970))"]
         param.type = .Reply
         let data = PFNetwork.html(data: param)
+        // 评论有时间间隔限制
+        waitSleep(type: .Reply)
         if data.findSuccess(txt: "非常感謝，回復發佈成功") {
             user.replyTimes += 1
             log.debugPrint(text: "第\(user.replyTimes)条：「\(comment)」-> 發佈成功", type: .Success)
@@ -317,12 +317,12 @@ class PicForum: ATBaseTask {
     
     private func leavMessage() {
         guard user.canLeaveMessage, user.otherUserId > 999 else { return }
-        waitSleep(type: .LeaveMessage)
         let refer = "home.php?mod=space&uid=\(user.otherUserId)"
         var param = defaultData
         param.body = ["refer": refer, "formhash": formhash, "id": "\(user.otherUserId)", "handlekey": "commentwall_\(user.otherUserId)", "message": "留个言，赚个金币。"]
         param.type = .LeavMessage
         let data = PFNetwork.html(data: param)
+        waitSleep(type: .LeaveMessage)
         if data.findSuccess() {
             log.debugPrint(text: "留言成功", type: .Success)
             user.isLeaveMessage = false
@@ -429,7 +429,6 @@ class PicForum: ATBaseTask {
     
     private func record() {
         guard user.canRecord, user.userId > 9999 else { return }
-        waitSleep(type: .Record)
         let referer = "home.php?mod=space&uid=\(user.userId)&do=doing&view=me&from=space"
         let message = comments.randomElement()!
         var param = defaultData
@@ -437,6 +436,7 @@ class PicForum: ATBaseTask {
         param.body = ["message": message, "formhash": formhash, "referer": referer]
         param.type = .Record
         let data = PFNetwork.html(data: param)
+        waitSleep(type: .Record)
         if data.findSuccess(txt: message) {
             log.debugPrint(text: "记录：「\(message)」-> 发表成功", type: .Success)
             user.isRecord = false
@@ -496,8 +496,6 @@ class PicForum: ATBaseTask {
     
     private func journal() {
         guard user.canJournal else { return }
-        waitSleep(type: .Journal)
-        //login()
         user.reloadMoney()
         let title = comments.randomElement()!
         let comment = comments.shuffled().suffix(10).joined(separator: "\n")
@@ -524,6 +522,7 @@ class PicForum: ATBaseTask {
         ]
         param.type = .Journal
         let data = PFNetwork.html(data: param)
+        waitSleep(type: .Journal)
         if data.findSuccess(txt: title) {
             user.journalTimes += 1
             user.save()
@@ -570,7 +569,6 @@ class PicForum: ATBaseTask {
         var allIds = allBlogIds ?? allJournals(isShowLine: true)
         guard !allIds.isEmpty else { return }
         let id = allIds.removeFirst()
-        //login()
         let referer = PFConfig.default.fullURL("home.php?mod=space&do=blog&view=me")
         var param = defaultData
         param.apiValue = ["blogid": id]
@@ -594,8 +592,6 @@ class PicForum: ATBaseTask {
     
     private func share() {
         guard user.canShare else { return }
-        waitSleep(type: .Share)
-        //login()
         // 发表前的金币数
         user.reloadMoney()
         let referer = "home.php?mod=space&uid=\(user.userId)&do=share&view=me&quickforward=1"
@@ -604,6 +600,7 @@ class PicForum: ATBaseTask {
         param.body = ["formhash": formhash, "referer": referer, "link": "https://www.baidu.com", "general": comments.randomElement()!]
         param.type = .Share
         let data = PFNetwork.html(data: param)
+        waitSleep(type: .Share)
         if data.findSuccess() {
             user.shareTimes += 1
             user.save()
@@ -661,11 +658,9 @@ class PicForum: ATBaseTask {
     /// - Parameters:
     ///   - type: 休息类型
     private func waitSleep(type: PicType) {
-        if (isSend && type.sleepSec > 0) {
-            sleepTime += type.sleepSec
-            log.debugPrint(text: "\(type.rawValue)休息 \(type.sleepSec) 秒", type: .White)
-            sleep(type.sleepSec)
-        }
-        isSend = true
+        guard type.sleepSec > 0 else { return }
+        sleepTime += type.sleepSec
+        log.debugPrint(text: "\(type.rawValue)休息 \(type.sleepSec) 秒", type: .White)
+        sleep(type.sleepSec)
     }
 }

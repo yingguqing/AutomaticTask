@@ -253,14 +253,14 @@ extension PFNetwork {
     ///   - isCleanCookie: 是否清除所有cookie
     ///   - failTimes: 失败次数
     @discardableResult class func html(data: PFNetworkData, title: String = "", failTimes: Int = 0) -> PFResult {
-        //print(data.type.rawValue + (data.url?.absoluteString ?? ""))
         let resultData = ATRequestManager.syncSend(data: data)
-        if let htmlString = resultData.0?.text {
-            if let _ = htmlString.range(of: "400 Bad Request"), failTimes < 5 {
-                //print("400 Bad Request")
-                return html(data: data, title: title, failTimes: failTimes + 1)
-            }
+        let htmlString = resultData.0?.text
+        if htmlString?.contains("400 Bad Request") == true, failTimes < 5 {
+            return html(data: data, title: title, failTimes: failTimes + 1)
+        } else if let htmlString = htmlString {
             return PFResult(html: htmlString)
+        } else if resultData.1?.code == ATError.Timeout.code, failTimes < 5 {
+            return html(data: data, title: title, failTimes: failTimes + 1)
         } else {
             print("\(title.isEmpty ? data.type.rawValue : title)失败：\(resultData.1?.localizedDescription ?? "")")
             return PFResult(error: resultData.1)
