@@ -81,6 +81,21 @@ extension NetworkData {
     }
 }
 
+struct ATResult {
+    let data:Data?
+    var cookies:[String:String]
+    let error:ATError?
+    
+    static let nilValue:ATResult = ATResult(data: nil, cookies: [:], error: nil)
+    
+    init(data:Data?, cookies:[String:String]=[:], error:ATError?) {
+        self.data = data
+        self.cookies = cookies
+        self.error = error
+    }
+    
+}
+
 class ATRequestManager {
     private init() {}
     
@@ -88,14 +103,14 @@ class ATRequestManager {
     /// - Parameters:
     ///   - data: 请求URL数据
     ///   - complete: 完成回调
-    class func asyncSend(data: NetworkData, complete: ((Data?, [String:String], ATError?) -> Void)?) {
+    class func asyncSend(data: NetworkData, complete: ((ATResult) -> Void)?) {
         dataTask(netData: data, complete: complete)
     }
     
     /// 同步发送网络请求
     /// - Parameter data: 请求URL数据
     /// - Returns: (网络数据，错误)
-    class func syncSend(data: NetworkData) -> (Data?, [String:String], ATError?) {
+    class func syncSend(data: NetworkData) -> ATResult {
         return dataTask(netData: data, isAsync: false, complete: nil)
     }
 
@@ -105,48 +120,39 @@ class ATRequestManager {
     ///   - isUseCookie: 是否使用cookie
     ///   - isAsync: 是否使用异步请求
     ///   - complete: 回调
-    @discardableResult private class func dataTask(netData: NetworkData, isAsync: Bool = true, complete: ((Data?, [String:String], ATError?) -> Void)?) -> (Data?, [String:String], ATError?) {
-        guard let request = netData.request else { return (nil, [:], nil) }
+    @discardableResult private class func dataTask(netData: NetworkData, isAsync: Bool = true, complete: ((ATResult) -> Void)?) -> ATResult {
+        guard let request = netData.request else { return ATResult.nilValue }
         let configuration = URLSessionConfiguration.ephemeral
         let session = URLSession(configuration: configuration)
-        var returnData: Data?
-        var returnError: ATError?
-        var cookieDic = [String:String]()
+        var returnResult:ATResult?
         let task = session.dataTask(with: request) { data, response, error in
+            var result = ATResult(data: data, error: ATError(error: error))
             if request.httpShouldHandleCookies, let url = response?.url, let httpResponse = response as? HTTPURLResponse, let fields = httpResponse.allHeaderFields as? [String: String] {
                 let cookies = HTTPCookie.cookies(withResponseHeaderFields: fields, for: url)
                 cookies.forEach {
-                    cookieDic[$0.name] = $0.value
+                    result.cookies[$0.name] = $0.value
                 }
             }
-            returnData = data
-            returnError = ATError(error: error)
-            complete?(data, cookieDic, returnError)
+            if isAsync {
+                complete?(result)
+            } else {
+                returnResult = result
+            }
+            
         }
         task.resume()
         // 同步请求
-        guard !isAsync else { return (returnData, cookieDic, returnError) }
+        guard !isAsync else { return ATResult.nilValue }
         // 计算超时的最终时间戳
         let end = Date().timeIntervalSince1970 + request.timeoutInterval + 5
-        while returnData == nil && returnError == nil {
+        while returnResult == nil {
             _ = RunLoop.current.run(mode: .default, before: .init(timeIntervalSinceNow: 1))
             if Date().timeIntervalSince1970 >= end {
-                returnError = .Timeout
+                returnResult = ATResult(data: nil, error: .Timeout)
                 task.cancel()
                 break
             }
         }
-        return (returnData, cookieDic, returnError)
-    }
-
-    /// 清除所有cookie
-    class func cleanCookie(url: URL?) {
-        guard let url = url else {
-            return
-        }
-
-        HTTPCookieStorage.shared.cookies(for: url)?.forEach {
-            HTTPCookieStorage.shared.deleteCookie($0)
-        }
+        return returnResult!
     }
 }

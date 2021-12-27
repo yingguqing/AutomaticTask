@@ -54,7 +54,7 @@ struct Repeat: ParsableCommand {
             RunLoop.current.run(mode: .default, before: .init(timeIntervalSinceNow: 10))
         }
         let time = Date().timeIntervalSince1970 - star
-        print("总时长：\(time.timeFromat)")
+        print("总耗时：\(time.timeFromat)")
     }
 }
 Repeat.main()

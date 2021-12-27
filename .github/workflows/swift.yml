@@ -1,4 +1,4 @@
-name: Swift
+name: 自动任务
 
 on: #[push]
   # 定时任务

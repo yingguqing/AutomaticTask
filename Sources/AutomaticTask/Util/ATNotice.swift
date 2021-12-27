@@ -41,15 +41,15 @@ class ATNotice: ATBaseTask {
         data.title = title
         data.icon = icon
         data.group = group
-        ATRequestManager.asyncSend(data: data) { data, _, error in
-            let json = data?.json as? [String: Any]
+        ATRequestManager.asyncSend(data: data) { result in
+            let json = result.data?.json as? [String: Any]
             let code = json?["code"] as? Int
             if code != 200 {
                 var msg = ""
-                if let data = data {
+                if let data = result.data {
                     msg = String(data: data, encoding: .utf8) ?? ""
                 }
-                if let error = error {
+                if let error = result.error {
                     msg.append(" | \(error.localizedDescription)")
                 }
                 print("发送通知失败：\(msg)")

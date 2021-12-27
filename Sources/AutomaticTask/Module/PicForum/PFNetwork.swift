@@ -257,16 +257,16 @@ extension PFNetwork {
     ///   - failTimes: 失败次数
     @discardableResult class func html(data: PFNetworkData, title: String = "", failTimes: Int = 0) -> PFResult {
         let resultData = ATRequestManager.syncSend(data: data)
-        let htmlString = resultData.0?.text
+        let htmlString = resultData.data?.text
         if htmlString?.contains("400 Bad Request") == true, failTimes < 5 {
             return html(data: data, title: title, failTimes: failTimes + 1)
         } else if let htmlString = htmlString {
-            return PFResult(html: htmlString, cookies: resultData.1)
-        } else if resultData.2?.code == ATError.Timeout.code, failTimes < 5 {
+            return PFResult(html: htmlString, cookies: resultData.cookies)
+        } else if resultData.error?.code == ATError.Timeout.code, failTimes < 5 {
             return html(data: data, title: title, failTimes: failTimes + 1)
         } else {
-            print("\(title.isEmpty ? data.type.rawValue : title)失败：\(resultData.2?.localizedDescription ?? "")")
-            return PFResult(error: resultData.2)
+            print("\(title.isEmpty ? data.type.rawValue : title)失败：\(resultData.error?.localizedDescription ?? "")")
+            return PFResult(error: resultData.error)
         }
     }
     
