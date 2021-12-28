@@ -38,12 +38,12 @@ class ATConfig: SafeClass {
     }
     
     func writeFile() {
-        do {
-            let data = try JSONSerialization.data(withJSONObject: config, options: [.sortedKeys, .prettyPrinted])
-            try data.write(to: configPath.toFileURL)
-        } catch {
-            print("公用配置文件写入失败：\(error.localizedDescription)")
-        }
+        //do {
+            //let data = try JSONSerialization.data(withJSONObject: config, options: [.sortedKeys, .prettyPrinted])
+            //try data.write(to: configPath.toFileURL)
+        //} catch {
+            //print("公用配置文件写入失败：\(error.localizedDescription)")
+        //}
     }
 }
 

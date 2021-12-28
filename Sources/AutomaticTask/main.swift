@@ -7,17 +7,25 @@
 import Foundation
 import ArgumentParser
 
+var isPrintColor = true
+
 struct Repeat: ParsableCommand {
     @Option(help: "比思论坛参数")
     var picForum: String?
 
     @Flag(help: "抓取必应壁纸")
     var bingWallpaper = false
+    
+    @Flag(help: "禁用输出颜色")
+    var disablePrintColor = false
+    
 
     func run() {
         print("当前北京时间：\(Date.nowString())")
         let star = Date().timeIntervalSince1970
         var taskArray = SafeArray<AutomaticTask>()
+        
+        isPrintColor = !disablePrintColor
         
         // 必应壁纸
         if bingWallpaper {

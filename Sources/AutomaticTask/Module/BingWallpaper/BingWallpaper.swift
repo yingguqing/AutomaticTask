@@ -8,6 +8,10 @@
 import Foundation
 
 class BingWallpaper: ATBaseTask {
+    
+    // 日志系统
+    lazy var log = ATPrintLog(title: "必应壁纸")
+    
     struct BWImage {
         var url: String
         let endDate: String
@@ -56,9 +60,15 @@ class BingWallpaper: ATBaseTask {
                 today.url = BWNetwork.API.HPImageArchive.host + today.url
                 self.save(image: today)
             } else {
+                self.log.print(text: "网络数据解析失败", type: .Faild)
                 self.finish()
             }
         }
+    }
+    
+    override func finish(_ finish: Bool = true) {
+        log.printLog()
+        super.finish(finish)
     }
     
     /// 保存壁纸数据
@@ -69,16 +79,17 @@ class BingWallpaper: ATBaseTask {
             let data = try Data(contentsOf: jsonURL)
             var imageJsonArrays = try JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed) as! [[String: Any]]
             let historyImages = imageJsonArrays.map { BWImage(json: $0) }
-            if let first = historyImages.first, first.url == image.url {
-                print("数据相同，不添加")
+            if let first = historyImages.first, first.endDate == image.endDate {
+                log.print(text: "今天数据已存在，忽略。", type: .Warn)
             } else {
                 try writeReadMe(images: historyImages, today: image)
                 imageJsonArrays.insert(image.toJson, at: 0)
                 let data = try JSONSerialization.data(withJSONObject: imageJsonArrays, options: .prettyPrinted)
                 try data.write(to: jsonURL)
+                log.print(text: "今天壁纸数据写入完成",type: .Success)
             }
         } catch {
-            print("必应壁纸报错：\(error.localizedDescription)")
+            log.print(text:"解析历史json报错：\(error.localizedDescription)", type: .Faild)
         }
         finish()
     }

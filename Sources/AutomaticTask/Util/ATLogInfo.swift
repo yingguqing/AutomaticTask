@@ -30,12 +30,12 @@ enum ATPrintType: Int {
     
     // 根据类型，生成相应颜色的文字
     func colorText(_ text: String) -> String {
-        #if DEBUG
-        return text
-        #else
-        let index = self == .Info ? Int.random(in: 34...37) : rawValue
-        return "\033[7;30;\(index)m\(text)\033[0m"
-        #endif
+        if isPrintColor {
+            let index = self == .Info ? Int.random(in: 34...37) : rawValue
+            return "\u{001B}[0;\(index)m\(text)"
+        } else {
+            return text
+        }
     }
 }
 

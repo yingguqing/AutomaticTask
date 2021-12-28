@@ -98,9 +98,7 @@ class PicForum: ATBaseTask {
     }
     
     func run() {
-        defer {
-            runFinish()
-        }
+        defer { finish() }
         log.print(text: "------------- \(user.name) 比思签到 -------------", type: .Normal)
         // 登录
         guard login() else { return }
@@ -125,25 +123,24 @@ class PicForum: ATBaseTask {
         // 删除自己空间留言所产生的动态
         deleteAllleavMessageDynamic()
         user.reloadMoney()
-        if user.historyMoney > -1 {
-            log.debugPrint(text: "增加金币：\(user.money - user.historyMoney)", type: .Cyan)
-        }
         user.save()
+        if user.historyMoney > -1 {
+            log.print(text: "增加金币：\(user.money - user.historyMoney)", type: .Cyan)
+        }
         log.print(text: "金钱：\(user.money)", type: .White)
         log.print(text: "休息：\(Double(sleepTime).timeFromat)", type: .White)
     }
     
     /// 比思结束
-    private func runFinish() {
+    override func finish(_ finish: Bool = true) {
         // 统计执行时长
         let total = Date().timeIntervalSince1970 - starTime
         log.print(text: "------------- 签到完成,耗时\(total.timeFromat) -------------", type: .Normal)
         log.printLog()
-        finish()
+        super.finish(finish)
         notice.addNotice(text: "\(user.name):\(user.money)", index: user.index)
         notice.sendAllNotice(title: "比思", targetName: user.name)
     }
-    
     
     /// 访问首页
     /// - Parameters:
@@ -265,7 +262,7 @@ class PicForum: ATBaseTask {
         param.type = .Reply
         let data = network.html(data: param)
         // 评论有时间间隔限制
-        waitSleep(type: .Reply)
+        defer { waitSleep(type: .Reply) }
         if data.findSuccess(txt: "非常感謝，回復發佈成功") {
             user.replyTimes += 1
             log.debugPrint(text: "第\(user.replyTimes)条：「\(comment)」-> 發佈成功", type: .Success)
@@ -643,7 +640,7 @@ class PicForum: ATBaseTask {
     private func waitSleep(type: PicType) {
         guard type.sleepSec > 0 else { return }
         sleepTime += type.sleepSec
-        log.debugPrint(text: "\(type.rawValue)休息 \(type.sleepSec) 秒", type: .White)
+        log.debugPrint(text: "\(type.rawValue)已发表，休息 \(type.sleepSec) 秒", type: .White)
         sleep(type.sleepSec)
     }
 }
