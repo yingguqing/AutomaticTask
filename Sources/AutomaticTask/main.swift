@@ -14,18 +14,10 @@ struct Repeat: ParsableCommand {
     @Flag(help: "抓取必应壁纸")
     var bingWallpaper = false
 
-    @Flag(help: "编译检查")
-    var onlyBuild = false
-    
     func run() {
         print("当前北京时间：\(Date.nowString())")
         let star = Date().timeIntervalSince1970
         var taskArray = SafeArray<AutomaticTask>()
-        
-        // 编译检查
-        if onlyBuild {
-            print("项目编译通过。")
-        }
         
         // 必应壁纸
         if bingWallpaper {

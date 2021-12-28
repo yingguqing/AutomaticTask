@@ -17,5 +17,5 @@ jobs:
     - name: Build
       run: swift build
     - name: Run
-      run: swift run AutomaticTask --only-build
+      run: swift run AutomaticTask -h
 
