@@ -1,0 +1,21 @@
+name: 编译检查
+
+on: 
+  [push]
+
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest #ubuntu-latest macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: fwal/setup-swift@v1
+      with:
+        swift-version: "5.5.2"
+    - name: Build
+      run: swift build
+    - name: Run
+      run: swift run AutomaticTask -h
+

@@ -103,7 +103,7 @@ extension BWNetwork {
     /// 获取壁纸
     func getWallPaper(finish:((Bool)->Void)?) {
         self.finish = finish
-        ATRequestManager.asyncSend(data: API.HPImageArchive) { result in
+        ATRequestManager.default.asyncSend(data: API.HPImageArchive) { result in
             if let json = result.data?.json as? [String: Any] {
                 if let todayJson = json["images"] as? [[String:Any]], let first = todayJson.first {
                     var today = BWImage(json: first)

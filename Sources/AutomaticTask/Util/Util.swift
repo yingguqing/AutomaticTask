@@ -18,7 +18,8 @@ extension Date {
     
     func format(_ format: String = "YYYY-MM-dd HH:mm:ss") -> String {
         let dformatter = DateFormatter()
-        dformatter.locale = Locale(identifier: "zh_CN")
+        // 转成中国时区，上海时间
+        dformatter.timeZone = TimeZone(identifier: "Asia/Shanghai")
         dformatter.dateFormat = format
         return dformatter.string(from: self)
     }

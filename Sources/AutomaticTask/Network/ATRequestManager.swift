@@ -83,12 +83,12 @@ extension NetworkData {
 
 struct ATResult {
     let data:Data?
-    var cookies:[String:String]
+    var cookies:[HTTPCookie]
     let error:ATError?
     
-    static let nilValue:ATResult = ATResult(data: nil, cookies: [:], error: nil)
+    static let nilValue:ATResult = ATResult(data: nil, cookies: [], error: nil)
     
-    init(data:Data?, cookies:[String:String]=[:], error:ATError?) {
+    init(data:Data?, cookies:[HTTPCookie]=[], error:ATError?) {
         self.data = data
         self.cookies = cookies
         self.error = error
@@ -97,20 +97,21 @@ struct ATResult {
 }
 
 class ATRequestManager {
-    private init() {}
+    
+    static let `default` = ATRequestManager()
     
     /// 异步发送网络请求
     /// - Parameters:
     ///   - data: 请求URL数据
     ///   - complete: 完成回调
-    class func asyncSend(data: NetworkData, complete: ((ATResult) -> Void)?) {
+    func asyncSend(data: NetworkData, complete: ((ATResult) -> Void)?) {
         dataTask(netData: data, complete: complete)
     }
     
     /// 同步发送网络请求
     /// - Parameter data: 请求URL数据
     /// - Returns: (网络数据，错误)
-    class func syncSend(data: NetworkData) -> ATResult {
+    func syncSend(data: NetworkData) -> ATResult {
         return dataTask(netData: data, isAsync: false, complete: nil)
     }
 
@@ -120,7 +121,7 @@ class ATRequestManager {
     ///   - isUseCookie: 是否使用cookie
     ///   - isAsync: 是否使用异步请求
     ///   - complete: 回调
-    @discardableResult private class func dataTask(netData: NetworkData, isAsync: Bool = true, complete: ((ATResult) -> Void)?) -> ATResult {
+    @discardableResult private func dataTask(netData: NetworkData, isAsync: Bool = true, complete: ((ATResult) -> Void)?) -> ATResult {
         guard let request = netData.request else { return ATResult.nilValue }
         let configuration = URLSessionConfiguration.ephemeral
         let session = URLSession(configuration: configuration)
@@ -128,10 +129,7 @@ class ATRequestManager {
         let task = session.dataTask(with: request) { data, response, error in
             var result = ATResult(data: data, error: ATError(error: error))
             if request.httpShouldHandleCookies, let url = response?.url, let httpResponse = response as? HTTPURLResponse, let fields = httpResponse.allHeaderFields as? [String: String] {
-                let cookies = HTTPCookie.cookies(withResponseHeaderFields: fields, for: url)
-                cookies.forEach {
-                    result.cookies[$0.name] = $0.value
-                }
+                result.cookies = HTTPCookie.cookies(withResponseHeaderFields: fields, for: url)
             }
             if isAsync {
                 complete?(result)

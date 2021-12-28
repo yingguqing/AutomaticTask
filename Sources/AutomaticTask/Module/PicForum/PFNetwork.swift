@@ -6,17 +6,17 @@
 //
 
 import Foundation
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
+// #if canImport(FoundationNetworking)
+// import FoundationNetworking
+// #endif
 
 struct PFResult {
     let html: String
-    let cookies:[String:String]
+    let cookies: [HTTPCookie]
     let error: ATError?
     let success: Bool
     
-    init(html: String, cookies:[String:String]) {
+    init(html: String, cookies: [HTTPCookie]) {
         self.html = html
         self.cookies = cookies
         self.error = nil
@@ -24,7 +24,7 @@ struct PFResult {
     }
     
     init(error: ATError?) {
-        self.cookies = [:]
+        self.cookies = []
         self.error = error
         self.html = ""
         self.success = false
@@ -46,7 +46,10 @@ struct PFResult {
 }
 
 class PFNetwork {
-    private init() {}
+    fileprivate static let `default` = PFNetwork()
+    lazy var requestManager = ATRequestManager()
+    // 请求用到的cookie
+    var cookies = [HTTPCookie]()
     
     struct PFNetworkData: NetworkData {
         static let defaultHeader = [
@@ -68,14 +71,14 @@ class PFNetwork {
         var apiValue: [String: String]
         var body: [String: String]
         var type: API = .Home
-        var cookies: [String:String]
+        var cookies: [HTTPCookie]
         
         init(header: [String: String] = [:], api: [String: String] = [:], body: [String: String] = [:], _ type: API) {
             self.header = header
             self.apiValue = api
             self.body = body
             self.type = type
-            self.cookies = [:]
+            self.cookies = []
         }
         
         var headerFields: [String: String?]? {
@@ -112,12 +115,18 @@ class PFNetwork {
             return getAPI.contains(type) ? .GET : .POST
         }
         
+        func updateCookies(_ cookies: [HTTPCookie]) -> PFNetworkData {
+            var data = self
+            data.cookies = cookies
+            return data
+        }
+        
         var cookieString: String? {
             guard type != .Login else {
                 // 登录时，自动清除cookies
                 return nil
             }
-            let cookieString = cookies.map { "\($0.0)=\($0.1)" }.joined(separator: "; ")
+            let cookieString = cookies.map { "\($0.name)=\($0.value)" }.joined(separator: "; ")
             return cookieString
         }
     }
@@ -255,12 +264,15 @@ extension PFNetwork {
     ///   - title: 标题
     ///   - isCleanCookie: 是否清除所有cookie
     ///   - failTimes: 失败次数
-    @discardableResult class func html(data: PFNetworkData, title: String = "", failTimes: Int = 0) -> PFResult {
-        let resultData = ATRequestManager.syncSend(data: data)
+    @discardableResult func html(data: PFNetworkData, title: String = "", failTimes: Int = 0) -> PFResult {
+        // 更新cookies
+        let param = data.updateCookies(cookies)
+        let resultData = requestManager.syncSend(data: param)
         let htmlString = resultData.data?.text
         if htmlString?.contains("400 Bad Request") == true, failTimes < 5 {
             return html(data: data, title: title, failTimes: failTimes + 1)
         } else if let htmlString = htmlString {
+            updateCookies(resultData.cookies)
             return PFResult(html: htmlString, cookies: resultData.cookies)
         } else if resultData.error?.code == ATError.Timeout.code, failTimes < 5 {
             return html(data: data, title: title, failTimes: failTimes + 1)
@@ -277,12 +289,30 @@ extension PFNetwork {
     class func userMoney(id: Int) -> Int {
         guard id > 999 else { return -1 }
         let netData = PFNetworkData(header: PFNetworkData.defaultHeader, api: ["uid": "\(id)"], .Zone)
-        let data = html(data: netData)
+        let data = PFNetwork.default.html(data: netData)
         let regex = try! Regex("<li>金錢:\\s*<a href=\".*?\">(\\d+)</a>", options: [.ignoreCase])
         if let money = Int(regex.firstGroup(in: data.html) ?? "") {
             return money
         }
         print("获取金币失败：\(data.error?.localizedDescription ?? "")--\(data.html)")
         return -1
+    }
+    
+    /// 更新Cookies
+    /// - Parameter cookies: 新cookies
+    func updateCookies(_ cookies: [HTTPCookie]) {
+        // 删除同名的cookie，保留最新的
+        var newCookies = self.cookies + cookies
+        var names = Set<String>()
+        var removeIndex = [Int]()
+        for (index, value) in newCookies.enumerated() {
+            if names.contains(value.name) {
+                removeIndex.append(index)
+            } else {
+                names.insert(value.name)
+            }
+        }
+        removeIndex.reversed().forEach({ newCookies.remove(at: $0) })
+        self.cookies = newCookies
     }
 }
