@@ -6,25 +6,22 @@
 //
 
 import Foundation
-// #if canImport(FoundationNetworking)
-// import FoundationNetworking
-// #endif
+ #if canImport(FoundationNetworking)
+ import FoundationNetworking
+ #endif
 
 struct PFResult {
     let html: String
-    let cookies: [HTTPCookie]
     let error: ATError?
     let success: Bool
     
-    init(html: String, cookies: [HTTPCookie]) {
+    init(html: String) {
         self.html = html
-        self.cookies = cookies
         self.error = nil
         self.success = true
     }
     
     init(error: ATError?) {
-        self.cookies = []
         self.error = error
         self.html = ""
         self.success = false
@@ -273,7 +270,7 @@ extension PFNetwork {
             return html(data: data, title: title, failTimes: failTimes + 1)
         } else if let htmlString = htmlString {
             updateCookies(resultData.cookies)
-            return PFResult(html: htmlString, cookies: resultData.cookies)
+            return PFResult(html: htmlString)
         } else if resultData.error?.code == ATError.Timeout.code, failTimes < 5 {
             return html(data: data, title: title, failTimes: failTimes + 1)
         } else {
