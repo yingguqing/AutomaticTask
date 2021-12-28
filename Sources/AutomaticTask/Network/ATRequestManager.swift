@@ -35,11 +35,6 @@ protocol NetworkData {
     var request: URLRequest? { get }
 }
 
-protocol AutomaticTask {
-    var timeout:Int { get }
-    func isFinish() -> Bool
-}
-
 extension NetworkData {
     var cookieString: String? {
         return nil
@@ -144,7 +139,7 @@ class ATRequestManager {
         // 计算超时的最终时间戳
         let end = Date().timeIntervalSince1970 + request.timeoutInterval + 5
         while returnResult == nil {
-            _ = RunLoop.current.run(mode: .default, before: .init(timeIntervalSinceNow: 1))
+            RunLoop.current.run(mode: .default, before: .init(timeIntervalSinceNow: 1))
             if Date().timeIntervalSince1970 >= end {
                 returnResult = ATResult(data: nil, error: .Timeout)
                 task.cancel()

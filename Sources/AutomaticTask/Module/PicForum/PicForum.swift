@@ -144,7 +144,6 @@ class PicForum: ATBaseTask {
         notice.sendAllNotice(title: "比思", targetName: user.name)
     }
     
-    // MARK: 访问首页
     
     /// 访问首页
     /// - Parameters:
@@ -177,8 +176,7 @@ class PicForum: ATBaseTask {
         }
     }
     
-    // MARK: 登录
-    
+    /// 登录
     private func login() -> Bool {
         formhash = ""
         var param = defaultData
@@ -197,8 +195,7 @@ class PicForum: ATBaseTask {
         }
     }
     
-    // MARK: 签到
-    
+    /// 签到
     private func signIn() {
         guard isSignIn else { return }
         var param = defaultData
@@ -212,8 +209,6 @@ class PicForum: ATBaseTask {
             log.print(texts: ["签到失败", data.html], type: .Faild)
         }
     }
-    
-    // MARK: 版本帖子列表
     
     /// 版本帖子列表
     /// - Parameter isFirst: 是否是第一次获取，如果是的话会打印日志，并获取一下现有金币
@@ -251,8 +246,6 @@ class PicForum: ATBaseTask {
         // 评论数不够15条时，获取另一批帖子
         forumList()
     }
-    
-    // MARK: 发表评论
     
     /// 发表评论
     /// - Parameters:
@@ -304,8 +297,7 @@ class PicForum: ATBaseTask {
         }
     }
     
-    // MARK: 访问别人空间
-    
+    /// 访问别人空间
     private func visitUserZone() {
         guard user.isVisitOtherZone else { return }
         if user.otherUserId > 999 {
@@ -320,8 +312,7 @@ class PicForum: ATBaseTask {
         }
     }
     
-    // MARK: 留言
-    
+    /// 留言
     private func leavMessage() {
         guard user.canLeaveMessage, user.otherUserId > 999 else { return }
         let refer = "home.php?mod=space&uid=\(user.otherUserId)"
@@ -358,8 +349,6 @@ class PicForum: ATBaseTask {
         }
     }
     
-    // MARK: 删除留言
-    
     /// 删除留言
     /// - Parameter cId: 留言id
     private func deleteMessage(cId: String) {
@@ -385,8 +374,7 @@ class PicForum: ATBaseTask {
         }
     }
     
-    // MARK: 自己空间留言所产生的动态列表
-    
+    /// 自己空间留言所产生的动态列表
     private func deleteAllleavMessageDynamic() {
         guard user.userId > 999 else { return }
         var param = defaultData
@@ -402,8 +390,6 @@ class PicForum: ATBaseTask {
             deleteLeavMessageDynamic(feedid: $0, referer: url)
         }
     }
-    
-    // MARK: 删除一条动态
     
     /// 删除一条动态
     /// - Parameters:
@@ -432,8 +418,7 @@ class PicForum: ATBaseTask {
         }
     }
     
-    // MARK: 发表一条记录
-    
+    /// 发表一条记录
     private func record() {
         guard user.canRecord, user.userId > 9999 else { return }
         let referer = "home.php?mod=space&uid=\(user.userId)&do=doing&view=me&from=space"
@@ -459,8 +444,7 @@ class PicForum: ATBaseTask {
         }
     }
     
-    // MARK: 查询所有记录id
-    
+    /// 查询所有记录id
     private func findAllRecord() -> [String] {
         guard user.userId > 9999 else { return [] }
         var param = defaultData
@@ -473,8 +457,7 @@ class PicForum: ATBaseTask {
         return ids
     }
     
-    // MARK: 删除记录
-    
+    /// 删除记录
     private func deleteRecord() {
         // login()
         let ids = findAllRecord()
@@ -499,8 +482,7 @@ class PicForum: ATBaseTask {
         }
     }
     
-    // MARK: 发表日志
-    
+    /// 发表日志
     private func journal() {
         guard user.canJournal else { return }
         user.reloadMoney()
@@ -553,8 +535,7 @@ class PicForum: ATBaseTask {
         }
     }
     
-    // MARK: 查询自己所有脚本发表的日志
-    
+    /// 查询自己所有脚本发表的日志
     private func allJournals(isShowLine: Bool) -> [String] {
         var param = defaultData
         param.apiValue = ["uid": "\(user.userId)"]
@@ -564,8 +545,6 @@ class PicForum: ATBaseTask {
         let allBlogids = regex.matches(in: html).map { $0.captures.compactMap { $0 } }.filter { $0.count == 3 && $0[2].hasPrefix("我的日志") }.map { $0[1] }
         return allBlogids
     }
-    
-    // MARK: 删除日志
     
     /// 删除日志
     /// - Parameters:
@@ -595,8 +574,7 @@ class PicForum: ATBaseTask {
         delJournal(allBlogIds: allBlogIds, delTimes: times)
     }
     
-    // MARK: 发布一个分享
-    
+    /// 发布一个分享
     private func share() {
         guard user.canShare else { return }
         // 发表前的金币数
@@ -640,8 +618,6 @@ class PicForum: ATBaseTask {
             log.print(text: "发布分享失败，超过最大失败次数。", type: .Faild)
         }
     }
-    
-    // MARK: 删除一条分享
     
     /// 删除一条分享
     /// - Parameter sid: 分享的id

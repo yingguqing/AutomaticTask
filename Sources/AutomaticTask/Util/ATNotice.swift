@@ -7,6 +7,7 @@
 
 import Foundation
 
+/// 发送手机通知。手机需要下载应用：Bark
 class ATNotice: ATBaseTask {
     // 通知Key
     let noticeKey: String
@@ -32,7 +33,7 @@ class ATNotice: ATBaseTask {
     ///   - title: 通知标题(可以为空)
     ///   - icon: 通知图标
     ///   - group: 消息分组
-    func sendNotice(text: String, title: String = "", icon: String = "", group: String = "", isFinish:Bool=true) {
+    func sendNotice(text: String, title: String = "", icon: String = "", group: String = "", isFinish: Bool = true) {
         guard !noticeKey.isEmpty, !text.isEmpty else {
             finish(isFinish)
             return
@@ -68,12 +69,13 @@ class ATNotice: ATBaseTask {
         notices.append(noti)
     }
     
-        /// 将通知列表中的消息全部发送
-        /// - Parameter title: 通知标题
-        /// - Parameter targetName: 接收通知的目标名称
-    func sendAllNotice(title: String, targetName:String) {
+    /// 将通知列表中的消息全部发送
+    /// - Parameter title: 通知标题
+    /// - Parameter targetName: 接收通知的目标名称
+    func sendAllNotice(title: String, targetName: String) {
         _wait(); defer { _signal() }
         targetNames.append(targetName)
+        // 等待所有的通知收集完成
         guard Set(targetNames).count == targetCounts else { return }
         guard !noticeKey.isEmpty, !notices.isEmpty else {
             finish()

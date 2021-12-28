@@ -82,12 +82,12 @@ class PFUser {
         }
         // 历史金币：第一次运行时，从网页获取，第二次运行时，从数据文件读取
         historyMoney = userConfig.value(key: "history_money", defaultValue: _money)
-        replyTimes = userConfig.value(key: "reply_times", defaultValue: Int(0))
+        replyTimes = userConfig.value(key: "reply_times", defaultValue: 0)
         isVisitOtherZone = userConfig.value(key: "is_visit_other_zone", defaultValue: true)
         isLeaveMessage = userConfig.value(key: "is_leave_message", defaultValue: true)
         isRecord = userConfig.value(key: "is_record", defaultValue: true)
-        journalTimes = userConfig.value(key: "journal_times", defaultValue: Int(0))
-        shareTimes = userConfig.value(key: "share_times", defaultValue: Int(0))
+        journalTimes = userConfig.value(key: "journal_times", defaultValue: 0)
+        shareTimes = userConfig.value(key: "share_times", defaultValue: 0)
     }
     
     /// 重新获取金币数

@@ -14,7 +14,6 @@ enum ATError:Error, LocalizedError {
     case ResultFaild
     case Status(msg:String)
     case Timeout
-    case BadRequest
     case Error(_ error:Error)
     
     var code: Int {
@@ -33,8 +32,6 @@ enum ATError:Error, LocalizedError {
                 return 500
             case .Error:
                 return 600
-            case .BadRequest:
-                return 400
         }
     }
     
@@ -54,8 +51,6 @@ enum ATError:Error, LocalizedError {
                 return msg
             case .Error(let error):
                 return error.localizedDescription
-            case .BadRequest:
-                return "400 Bad Request"
         }
     }
     
@@ -69,9 +64,5 @@ enum ATError:Error, LocalizedError {
         } else {
             return nil
         }
-    }
-    
-    var isNetFail:Bool {
-        return self.code == 400 || self.code == 500
     }
 }

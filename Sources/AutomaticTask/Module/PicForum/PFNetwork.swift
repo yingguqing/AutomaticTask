@@ -189,7 +189,6 @@ class PFNetwork {
                 case .LeavMessage:
                     return "home.php?mod=spacecp&ac=comment&inajax=1"
                 case .DeleteMessageFront:
-                    // delcommenthk_\(cid)
                     return "home.php?mod=spacecp&ac=comment&op=delete&infloat=yes&inajax=1"
                 case .DeleteMessage:
                     return "home.php?mod=spacecp&ac=comment&op=delete&inajax=1"
@@ -204,7 +203,6 @@ class PFNetwork {
                 case .FindAllRecord:
                     return "home.php?mod=space&do=doing&view=me&from=space"
                 case .DeleteRecordFront:
-                    // handlekey=doinghk_\(doid)_
                     return "home.php?mod=spacecp&ac=doing&op=delete&id=&infloat=yes&inajax=1"
                 case .DeleteRecord:
                     return "home.php?mod=spacecp&ac=doing&op=delete&id=0"

@@ -7,8 +7,14 @@
 
 import Foundation
 
+protocol AutomaticTask {
+    var timeout:Int { get }
+    func isFinish() -> Bool
+}
+
 class ATBaseTask: SafeClass, AutomaticTask {
     
+    // 任务超时时间
     var timeout: Int = 60
     
     // 结束标识

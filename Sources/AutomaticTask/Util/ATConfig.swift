@@ -7,14 +7,13 @@
 
 import Foundation
 
-
+/// 配置系统
 class ATConfig: SafeClass {
     
     static let `default` = ATConfig()
     
     private var config:[String:Any]
-    
-    let configPath:String
+    private let configPath:String
     
     override init() {
         let base = #file.deletingLastPathComponent.deletingLastPathComponent
