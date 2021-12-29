@@ -289,7 +289,7 @@ extension PFNetwork {
         if let money = Int(regex.firstGroup(in: data.html) ?? "") {
             return money
         }
-        print("获取金币失败：\(data.error?.localizedDescription ?? "")--\(data.html)")
+        print("获取金币失败：\(data.error?.localizedDescription ?? "")--\(netData.url?.absoluteString ?? "")")
         return -1
     }
     

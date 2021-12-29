@@ -29,9 +29,10 @@ enum ATError:Error, LocalizedError {
             case .Status:
                 return 700
             case .Timeout:
-                return 500
-            case .Error:
-                return 600
+                return -1001
+            case .Error(let error):
+                let er = error as NSError
+                return er.code
         }
     }
     
@@ -60,7 +61,12 @@ enum ATError:Error, LocalizedError {
     
     init?(error:Error?) {
         if let error = error {
-            self = ATError.Error(error)
+            let er = error as NSError
+            if er.code == -1001 {
+                self = .Timeout
+            } else {
+                self = ATError.Error(error)
+            }
         } else {
             return nil
         }

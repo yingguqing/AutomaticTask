@@ -7,6 +7,7 @@
 
 import Foundation
 
+var isPrintColor = true
 // 日志类型
 enum ATPrintType: Int {
     // 正常打印，没有颜色
@@ -93,19 +94,17 @@ class ATPrintLog {
     // 标题
     let title: String
     // 是否是debug模式，debug模式会打印每条日志
-    private var isDebug = false
-    // 日志名称，设置了名称，就自动进入Debug模式
-    var logName = "" {
-        didSet {
-            isDebug = !logName.isEmpty
-        }
-    }
+    let isDebug:Bool
+    // 日志名称，设置了名称，就自动保存日志到文件
+    let logFileName:String
     
     // 记录所有日志的数组
     private var logs = SafeArray<ATLogInfo>()
     
-    init(title: String) {
+    init(title: String, isDebug:Bool=false, logFileName:String="") {
         self.title = title
+        self.isDebug = isDebug
+        self.logFileName = logFileName
     }
     
     /// 记录日志列表，并打印日志
@@ -128,7 +127,7 @@ class ATPrintLog {
     ///   - type: 日志类型
     func debugPrint(text: String? = nil, texts: [String] = [], type: ATPrintType) {
         if let text = text {
-            let info = ATLogInfo(log: text, type: type, title: title, logName: logName)
+            let info = ATLogInfo(log: text, type: type, title: title, logName: logFileName)
             print(info: info, isDebug: true)
         } else if !texts.isEmpty {
             texts.forEach {
@@ -144,7 +143,7 @@ class ATPrintLog {
     ///   - type: 日志类型
     func print(text: String? = nil, texts: [String] = [], type: ATPrintType) {
         if let text = text {
-            let info = ATLogInfo(log: text, type: type, title: title, logName: logName)
+            let info = ATLogInfo(log: text, type: type, title: title, logName: logFileName)
             print(info: info, isDebug: false)
         } else if !texts.isEmpty {
             texts.forEach {

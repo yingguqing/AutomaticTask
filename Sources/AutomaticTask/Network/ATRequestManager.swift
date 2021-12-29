@@ -36,6 +36,10 @@ protocol NetworkData {
 }
 
 extension NetworkData {
+    var method:HttpMethod {
+        return .GET
+    }
+    
     var cookieString: String? {
         return nil
     }

@@ -7,19 +7,16 @@
 import Foundation
 import ArgumentParser
 
-var isPrintColor = true
-
 struct Repeat: ParsableCommand {
     @Option(help: "比思论坛参数")
     var picForum: String?
-
+    
     @Flag(help: "抓取必应壁纸")
     var bingWallpaper = false
     
     @Flag(help: "禁用输出颜色")
     var disablePrintColor = false
     
-
     func run() {
         print("当前北京时间：\(Date.nowString())")
         let star = Date().timeIntervalSince1970
@@ -48,11 +45,12 @@ struct Repeat: ParsableCommand {
                 DispatchQueue.global().async {
                     pic.run()
                 }
+                sleep(2)
             }
         }
         
-        // 取出所有进程里超时时长最大值 * 2
-        let timeout = (taskArray.map({ $0.timeout }).max() ?? 1200) * 2
+        // 统计所有进程里超时时长
+        let timeout = taskArray.map { $0.timeout }.reduce(0, +)
         while true {
             if taskArray.filter({ !$0.isFinish() }).isEmpty {
                 break
@@ -67,4 +65,5 @@ struct Repeat: ParsableCommand {
         print("总耗时：\(time.timeFromat)")
     }
 }
+
 Repeat.main()
