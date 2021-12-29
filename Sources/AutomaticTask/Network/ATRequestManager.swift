@@ -65,7 +65,7 @@ extension NetworkData {
         guard let url = self.url else { return nil }
         var request = URLRequest(url: url)
         // 设置超时时间
-        request.timeoutInterval = TimeInterval(60)
+        request.timeoutInterval = TimeInterval(15)
         request.httpMethod = method.rawValue
         if let cookies = cookieString {
             request.httpShouldHandleCookies = true
