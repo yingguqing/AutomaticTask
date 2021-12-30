@@ -7,7 +7,6 @@
 
 import Foundation
 
-var isPrintColor = true
 // 日志类型
 enum ATPrintType: Int {
     // 正常打印，没有颜色
@@ -31,12 +30,12 @@ enum ATPrintType: Int {
     
     // 根据类型，生成相应颜色的文字
     func colorText(_ text: String) -> String {
-        if isPrintColor {
-            let index = self == .Info ? Int.random(in: 34...37) : rawValue
-            return "\u{001B}[0;\(index)m\(text)"
-        } else {
-            return text
-        }
+#if Xcode
+        return text
+#else
+        let index = self == .Info ? Int.random(in: 34...37) : rawValue
+        return "\u{001B}[0;\(index)m\(text)"
+#endif
     }
 }
 

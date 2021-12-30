@@ -14,15 +14,10 @@ struct Repeat: ParsableCommand {
     @Flag(help: "抓取必应壁纸")
     var bingWallpaper = false
     
-    @Flag(help: "禁用输出颜色")
-    var disablePrintColor = false
-    
     func run() {
         print("当前北京时间：\(Date.nowString())")
         let star = Date().timeIntervalSince1970
         var taskArray = SafeArray<AutomaticTask>()
-        
-        isPrintColor = !disablePrintColor
         
         // 必应壁纸
         if bingWallpaper {
@@ -65,7 +60,6 @@ struct Repeat: ParsableCommand {
         print("总耗时：\(time.timeFromat)")
     }
 }
-#if DEBUG
-print("Debug")
-#endif
+
 Repeat.main()
+
