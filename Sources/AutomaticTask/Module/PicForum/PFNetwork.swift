@@ -47,6 +47,8 @@ class PFNetwork {
     lazy var requestManager = ATRequestManager()
     // 请求用到的cookie
     var cookies = [HTTPCookie]()
+    // 日志系统
+    var log:ATPrintLog?
     
     struct PFNetworkData: NetworkData {
         static let defaultHeader = [
@@ -272,7 +274,8 @@ extension PFNetwork {
         } else if resultData.error?.code == ATError.Timeout.code, failTimes < 5 {
             return html(data: data, title: title, failTimes: failTimes + 1)
         } else {
-            print("\(title.isEmpty ? data.type.rawValue : title)失败：\(resultData.error?.localizedDescription ?? "")")
+            let msg = "\(title.isEmpty ? data.type.rawValue : title)失败：\(resultData.error?.localizedDescription ?? data.url?.absoluteString ?? "")"
+            log?.print(text: msg, type: .Faild)
             return PFResult(error: resultData.error)
         }
     }

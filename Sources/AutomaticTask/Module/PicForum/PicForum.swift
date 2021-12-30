@@ -86,7 +86,11 @@ class PicForum: ATBaseTask {
     // 网络请求的默认数据
     lazy var defaultData: PFNetwork.PFNetworkData = PFNetwork.PFNetworkData(header: PFNetwork.PFNetworkData.defaultHeader, .Home)
     // 网络
-    lazy var network = PFNetwork()
+    lazy var networkPFNetwork: = {
+        let net = PFNetwork()
+        net.log = log
+        return net
+    }()
     
     init(user: PFUser, notice: ATNotice) {
         self.user = user
