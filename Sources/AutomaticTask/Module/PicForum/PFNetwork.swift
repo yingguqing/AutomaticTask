@@ -266,13 +266,11 @@ extension PFNetwork {
         let param = data.updateCookies(cookies)
         let resultData = requestManager.syncSend(data: param)
         let htmlString = resultData.data?.text
-        if htmlString?.contains("400 Bad Request") == true, failTimes < 5 {
+        if failTimes < 5 && (htmlString?.contains("400 Bad Request") == true || resultData.error?.code == ATError.Timeout.code) {
             return html(data: data, title: title, failTimes: failTimes + 1)
         } else if let htmlString = htmlString {
             updateCookies(resultData.cookies)
             return PFResult(html: htmlString)
-        } else if resultData.error?.code == ATError.Timeout.code, failTimes < 5 {
-            return html(data: data, title: title, failTimes: failTimes + 1)
         } else {
             let msg = "\(title.isEmpty ? data.type.rawValue : title)失败：\(resultData.error?.localizedDescription ?? data.url?.absoluteString ?? "")"
             log?.print(text: msg, type: .Faild)

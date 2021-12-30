@@ -31,17 +31,7 @@ struct Repeat: ParsableCommand {
         // 比思签到
         if let data = picForum?.data(using: .utf8), let json = data.json as? [String: Any] {
             PFConfig.default = PFConfig(json: json)
-            let pfNotice = ATNotice(json: json)
-            taskArray.append(pfNotice)
-            PFConfig.default.users.forEach {
-                let pic = PicForum(user: $0, notice: pfNotice)
-                pfNotice.targetCounts += 1
-                taskArray.append(pic)
-                DispatchQueue.global().async {
-                    pic.run()
-                }
-                sleep(2)
-            }
+            PFConfig.default.run(&taskArray)
         }
         
         // 统计所有进程里超时时长，不超过2个小时(7200秒)

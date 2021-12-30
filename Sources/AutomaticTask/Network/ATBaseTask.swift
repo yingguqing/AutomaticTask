@@ -15,7 +15,7 @@ protocol AutomaticTask {
 class ATBaseTask: SafeClass, AutomaticTask {
     
     // 任务超时时间
-    var timeout: Int = 60
+    var timeout: Int = 15
     
     // 结束标识
     private var _finish = false
