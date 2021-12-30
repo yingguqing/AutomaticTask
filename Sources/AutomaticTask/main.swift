@@ -49,8 +49,8 @@ struct Repeat: ParsableCommand {
             }
         }
         
-        // 统计所有进程里超时时长
-        let timeout = taskArray.map { $0.timeout }.reduce(0, +)
+        // 统计所有进程里超时时长，不超过2个小时(7200秒)
+        let timeout = min(taskArray.map { $0.timeout }.reduce(0, +), 7200)
         while true {
             if taskArray.filter({ !$0.isFinish() }).isEmpty {
                 break
@@ -65,5 +65,7 @@ struct Repeat: ParsableCommand {
         print("总耗时：\(time.timeFromat)")
     }
 }
-
+#if DEBUG
+print("Debug")
+#endif
 Repeat.main()

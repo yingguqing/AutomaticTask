@@ -68,7 +68,6 @@ class PFUser {
         saveKey = "HKPIC_CONFIG_\(userName.xorEncrypt(xor))".replacingOccurrences(of: "/", with: "$")
         var userConfig = ATConfig.default.read(key: saveKey) as? [String: Any] ?? [:]
         index = userConfig.value(key: "index", defaultValue: -1)
-        otherUserId = userConfig.value(key: "other_user_id", defaultValue: 0)
         let userId = userConfig.value(key: "user_id", defaultValue: 0)
         self.userId = userId
         let _money = PFNetwork.userMoney(id: userId)
@@ -137,7 +136,6 @@ extension PFUser {
             "name": name,
             "money": money,
             "user_id": userId,
-            "other_user_id": otherUserId,
             "date": date,
             "is_visit_other_zone": isVisitOtherZone,
             "reply_times": replyTimes,

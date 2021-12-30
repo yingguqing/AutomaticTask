@@ -91,7 +91,7 @@ class PicForum: ATBaseTask {
     init(user: PFUser, notice: ATNotice) {
         self.user = user
         self.notice = notice
-        self.log = ATPrintLog(title: user.name, isDebug: true)
+        self.log = ATPrintLog(title: user.name)
         super.init()
         super.timeout = 1200
     }
