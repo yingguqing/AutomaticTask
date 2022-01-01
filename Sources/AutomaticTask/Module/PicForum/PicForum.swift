@@ -524,7 +524,7 @@ class PicForum: ATBaseTask {
             }
         } else {
             user.maxJournalFailTimes -= 1
-            log.print(texts: ["发表日志失败，准备重试。"] + data.errorData, type: .Faild)
+            log.print(text: "发表日志失败，准备重试。", type: .Faild)
         }
         
         // 发表有时间间隔限制
