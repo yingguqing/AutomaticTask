@@ -64,8 +64,6 @@ extension NetworkData {
     var request: ATRequest? {
         guard let url = self.url else { return nil }
         var request = ATRequest(url: url)
-        // 设置超时时间
-        request.timeoutInterval = 30
         request.httpMethod = method.rawValue
         if let cookies = cookieString {
             request.httpShouldHandleCookies = true
@@ -104,6 +102,17 @@ class ATRequest: URLRequest {
         retryTimes -= 1
         return self
     }
+    
+    init(url:URL) {
+        super.init(url: url)
+        // 设置超时时间
+        self.timeoutInterval = 30
+    }
+
+    init?(string:String) {
+        guard let url = URL(string: string) else { return nil }
+        self.init(url: url)
+    }
 }
 
 class ATRequestManager {
@@ -114,12 +123,7 @@ class ATRequestManager {
     ///   - url: 请求URL
     ///   - complete: 完成回调
     func asyncSend(url: String, complete: ((ATResult) -> Void)?) {
-        guard let url = URL(string: url) else {
-            complete?(.nilValue)
-            return
-        }
-        var request = ATRequest(url: url)
-        request.timeoutInterval = 15
+        let request = ATRequest(string: url)
         dataTask(request: request, complete: complete)
     }
 
@@ -127,11 +131,7 @@ class ATRequestManager {
     /// - url: 请求URL
     /// - Returns: (网络数据，错误)
     func syncSend(url: String) -> ATResult {
-        guard let url = URL(string: url) else {
-            return .nilValue
-        }
-        var request = ATRequest(url: url)
-        request.timeoutInterval = 15
+        let request = ATRequest(string: url)
         return dataTask(request: request, isAsync: false, complete: nil)
     }
 
