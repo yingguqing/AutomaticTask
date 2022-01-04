@@ -54,7 +54,7 @@ struct Repeat: ParsableCommand {
                 break
             }
             // 超时直接结束
-            if Date().timeIntervalSince1970 - star >= timeout {
+            if Int(Date().timeIntervalSince1970 - star) >= timeout {
                 print("任务超过最大时长。")
                 break
             }

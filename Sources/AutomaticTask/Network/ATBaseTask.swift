@@ -11,15 +11,15 @@ import Foundation
 let Timeout:Double = 30
 
 protocol AutomaticTask {
-    var timeout:Double { get }
+    var timeout:Int { get }
     func isFinish() -> Bool
 }
 
 extension AutomaticTask {
 
     // 任务超时时间
-    var timeout:Double {
-        return Timeout
+    var timeout:Int {
+        return Int(Timeout)
     }
 }
 
