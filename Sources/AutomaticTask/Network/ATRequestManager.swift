@@ -32,7 +32,7 @@ protocol NetworkData {
     // 请求方式
     var method: HttpMethod { get }
     // 请求request
-    var request: ATRequest? { get }
+    var request: URLRequest? { get }
 }
 
 extension NetworkData {
