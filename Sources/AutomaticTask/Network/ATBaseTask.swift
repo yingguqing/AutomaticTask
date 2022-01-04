@@ -7,6 +7,9 @@
 
 import Foundation
 
+// 全局超时时间
+let Timeout = 30
+
 protocol AutomaticTask {
     var timeout:Int { get }
     func isFinish() -> Bool
@@ -16,7 +19,7 @@ extension AutomaticTask {
 
     // 任务超时时间
     var timeout:Int {
-        return 30
+        return Timeout
     }
 }
 
