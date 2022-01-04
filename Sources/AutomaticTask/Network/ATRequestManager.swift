@@ -186,7 +186,8 @@ class ATRequestManager {
             if isAsync {
                 // 网络失败，且可以重试时
                 if let _ = error, faildTimes > 0 {
-                    return dataTask(request: request, isAsync: isAsync, faildTimes: faildTimes+1, complete: complete)
+                    dataTask(request: request, isAsync: isAsync, faildTimes: faildTimes+1, complete: complete)
+                    return
                 }
                 complete?(result)
             } else {
