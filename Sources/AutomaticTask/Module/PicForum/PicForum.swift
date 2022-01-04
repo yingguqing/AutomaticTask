@@ -46,7 +46,7 @@ class PicForum: ATBaseTask {
     // 记录发表状态，用于休息
     var isSend = false
     // 任务超时时间
-    var timeout: Int = 1200
+    override var timeout: Int = 1200
     // 日志系统
     let log: ATPrintLog
     // 帖子较多的板块
