@@ -12,10 +12,15 @@ protocol AutomaticTask {
     func isFinish() -> Bool
 }
 
-class ATBaseTask: SafeClass, AutomaticTask {
-    
+extension AutomaticTask {
+
     // 任务超时时间
-    var timeout: Int = 15
+    var timeout:Int {
+        return 30
+    }
+}
+
+class ATBaseTask: SafeClass, AutomaticTask {
     
     // 结束标识
     private var _finish = false

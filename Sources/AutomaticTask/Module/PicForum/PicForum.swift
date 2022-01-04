@@ -37,8 +37,6 @@ class PicForum: ATBaseTask {
     let starTime: Double = Date().timeIntervalSince1970
     // 休息时长
     var sleepTime: UInt32 = 0
-    // 通知系统
-    let notice: ATNotice
     // 用户
     let user: PFUser
     // 提交内容时需要
@@ -47,6 +45,8 @@ class PicForum: ATBaseTask {
     var isSignIn = false
     // 记录发表状态，用于休息
     var isSend = false
+    // 任务超时时间
+    var timeout: Int = 1200
     // 日志系统
     let log: ATPrintLog
     // 帖子较多的板块
@@ -92,12 +92,9 @@ class PicForum: ATBaseTask {
         return net
     }()
     
-    init(user: PFUser, notice: ATNotice) {
+    init(user: PFUser) {
         self.user = user
-        self.notice = notice
         self.log = ATPrintLog(title: user.name)
-        super.init()
-        super.timeout = 1200
     }
     
     func run() {
@@ -141,8 +138,12 @@ class PicForum: ATBaseTask {
         log.print(text: "------------- 签到完成,耗时\(total.timeFromat) -------------", type: .Normal)
         log.printLog()
         super.finish(finish)
-        notice.addNotice(text: "\(user.name):\(user.money)", index: user.index)
-        notice.sendAllNotice(title: "比思", targetName: user.name)
+        var noticeValue = PFConfig.default.noticeValue
+        noticeValue.text = "\(user.name):\(user.money)"
+        noticeValue.index = user.index
+        noticeValue.title = "比思金币"
+        ATNotice.default.addNotice(noticeValue)
+        ATNotice.default.sendAllNotice(targetName: user.name)
     }
     
     /// 访问首页

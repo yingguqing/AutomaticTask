@@ -15,10 +15,11 @@ class PFConfig {
     var host: String
     /// 域名发布地址
     let hostURL: String
-    /// 通知系统
-    private let notice:ATNotice
     /// 所有账号信息
     private let accounts: [[String: String]]
+    // 通知消息的基本数据
+    let noticeValue:ATNotice.ATNoticeValue
+    
     /// 所有用户
     lazy var users: [PFUser] = {
         let users = accounts.compactMap { PFUser(json: $0, xor: xor) }
@@ -35,13 +36,19 @@ class PFConfig {
         return users
     }()
     
-    init(json: [String: Any]) {
+    private init(json: [String: Any]) {
         let xor = json["xor"] as? String ?? ""
         self.xor = xor
         host = json["host"] as? String ?? ""
         hostURL = json["hostURL"] as? String ?? ""
         accounts = json["accounts"] as? [[String: String]] ?? []
-        notice = ATNotice(json: json)
+        let noticeIcon = json.value(key: "noticeIcon", defaultValue: "")
+        let groupName = json.value(key: "groupName", defaultValue: "")
+        noticeValue =  ATNotice.ATNoticeValue(groupName: groupName, icon: noticeIcon)
+    }
+    
+    func update(json:[String: Any]) {
+        PFConfig.default = PFConfig(json: json)
     }
     
     func fullURL(_ api: String) -> String {
@@ -49,21 +56,19 @@ class PFConfig {
     }
     
     /// 执行比思所有用户的行为
-    func run(_ taskArray:inout SafeArray<AutomaticTask>) {
-        // 寻找最优级域名
-        findBestHost()
-        let pics = users.map({ PicForum(user: $0, notice: notice) })
-        taskArray += pics
-        if !pics.isEmpty {
-            taskArray.append(notice)
-            notice.targetCounts += users.count
-        }
-        for pic in pics {
-            DispatchQueue.global().async {
-                pic.run()
+    func run() -> [AutomaticTask] {
+        let pics = users.map({ PicForum(user: $0) })
+        DispatchQueue.global().async {
+            // 寻找最优级域名
+            self.findBestHost()
+            for pic in pics {
+                DispatchQueue.global().async {
+                    pic.run()
+                }
+                sleep(1)
             }
-            sleep(1)
         }
+        return pics
     }
     
     /// 通过域名发布地址，查找最优级域名
@@ -76,22 +81,26 @@ class PFConfig {
         if let index = array.firstIndex(of: "比思永久域名") {
             // 提取所有域名
             let hosts = [self.host] + array.prefix(index).filter({ $0.hasPrefix("http")})
-            var bestHost = ""
-            var bestTime:Double = 999
-            // 测试延时最短的域名
-            for host in hosts {
-                let url = host.urlAppendPathComponent(PFNetwork.API.Home.api)
-                let star = Date().timeIntervalSince1970
-                let data = ATRequestManager.default.syncSend(url: url)
-                if data.data?.text?.contains("比思論壇") == true {
-                    let time = Date().timeIntervalSince1970 - star
-                    guard time < bestTime else { continue }
-                    bestTime = time
-                    bestHost = host
+            var hostDic = [String:Double]()
+            for _ in 0...5 {
+                // 测试延时最短的域名
+                for host in hosts {
+                    let url = host.urlAppendPathComponent(PFNetwork.API.Home.api)
+                    let star = Date().timeIntervalSince1970
+                    let data = ATRequestManager.default.syncSend(url: url)
+                    let time:Double
+                    if data.data?.text?.contains("比思論壇") == true {
+                        time = Date().timeIntervalSince1970 - star
+                    } else {
+                        time = 20
+                    }
+                    let totalTime = (hostDic[host] ?? 0) + time
+                    hostDic[host] = totalTime
                 }
             }
-            guard !bestHost.isEmpty else { return }
-            self.host = bestHost
+            // 取出多次测试，总延时最短的
+            let best = hostDic.min(by: { $0.1 < $1.1 })
+            self.host = best?.0 ?? host
         }
     }
 }

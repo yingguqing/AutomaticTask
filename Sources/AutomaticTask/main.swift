@@ -8,6 +8,9 @@ import Foundation
 import ArgumentParser
 
 struct Repeat: ParsableCommand {
+    @Option(help: "手机通知")
+    var notice: String?
+
     @Option(help: "比思论坛参数")
     var picForum: String?
     
@@ -27,11 +30,21 @@ struct Repeat: ParsableCommand {
             }
             taskArray.append(bw)
         }
+
+        // 手机通知
+        ATNotice.default.noticeKey = notice
         
         // 比思签到
         if let data = picForum?.data(using: .utf8), let json = data.json as? [String: Any] {
-            PFConfig.default = PFConfig(json: json)
-            PFConfig.default.run(&taskArray)
+            PFConfig.default.update(json: json)
+            let pics = PFConfig.default.run()
+            taskArray += pics
+            ATNotice.default.targetCounts += pics.count
+        }
+        
+        // 有通知需求时，把通知加到任务列表中
+        if ATNotice.default.isValid {
+            taskArray.append(ATNotice.default)
         }
         
         // 统计所有进程里超时时长，不超过2个小时(7200秒)

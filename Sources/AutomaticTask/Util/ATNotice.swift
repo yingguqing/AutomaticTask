@@ -9,22 +9,23 @@ import Foundation
 
 /// 发送手机通知。手机需要下载应用：Bark
 class ATNotice: ATBaseTask {
+    
+    static var `default`:ATNotice = ATNotice(noticeKey: "")
+    
     // 通知Key
-    let noticeKey: String
-    // 通知icon
-    let noticeIcon: String
-    // 通知分组
-    let groupName: String
+    var noticeKey: String?
     // 记录所有通知
     private var notices = SafeArray<ATNoticeValue>()
     private var targetNames = SafeArray<String>()
     // 接收通知的目标数
     var targetCounts = 0
     
-    init(json: [String: Any]) {
-        noticeKey = json.value(key: "noticeKey", defaultValue: "")
-        noticeIcon = json.value(key: "noticeIcon", defaultValue: "")
-        groupName = json.value(key: "groupName", defaultValue: "")
+    private init(noticeKey: String) {
+        self.noticeKey = noticeKey
+    }
+    
+    var isValid:Bool {
+        return noticeKey?.isEmpty == false && targetCounts > 0
     }
     
     /// 发送一条手机通知信息
@@ -34,7 +35,7 @@ class ATNotice: ATBaseTask {
     ///   - icon: 通知图标
     ///   - group: 消息分组
     func sendNotice(text: String, title: String = "", icon: String = "", group: String = "", isFinish: Bool = true) {
-        guard !noticeKey.isEmpty, !text.isEmpty else {
+        guard let noticeKey = noticeKey, !noticeKey.isEmpty, !text.isEmpty else {
             finish(isFinish)
             return
         }
@@ -61,38 +62,48 @@ class ATNotice: ATBaseTask {
     
     /// 往通知列表中插入一条
     /// - Parameters:
-    ///   - text: 通知内容
-    ///   - index: 插入位置（小于0表示添加到末尾）
-    func addNotice(text: String, index: Int = -1) {
+    ///   - value: 通知内容
+    func addNotice(_ value:ATNoticeValue) {
         _wait(); defer { _signal() }
-        let noti = ATNoticeValue(text: text, index: index >= 0 ? index : Int.max)
-        notices.append(noti)
+        notices.append(value)
     }
     
     /// 将通知列表中的消息全部发送
-    /// - Parameter title: 通知标题
     /// - Parameter targetName: 接收通知的目标名称
-    func sendAllNotice(title: String, targetName: String) {
+    func sendAllNotice(targetName: String) {
         _wait(); defer { _signal() }
         targetNames.append(targetName)
         // 等待所有的通知收集完成
         guard Set(targetNames).count == targetCounts else { return }
-        guard !noticeKey.isEmpty, !notices.isEmpty else {
+        guard let noticeKey = noticeKey, !noticeKey.isEmpty, !notices.isEmpty else {
             finish()
             return
         }
-        // 对通知进行排序
-        let sortList = notices.sorted(by: { $0.index < $1.index })
-        // 把列表中的消息拼接
-        let text = sortList.map { $0.text }.joined(separator: "\n")
-        sendNotice(text: text, title: title, icon: noticeIcon, group: groupName)
+        // 以标题进行分类
+        let allTitles = Set(notices.map({ $0.title }))
+        for title in allTitles {
+            let notices = self.notices.filter({ $0.title == title })
+                // 对通知进行排序
+            let sortList = notices.sorted(by: { $0.index < $1.index })
+                // 把列表中的消息拼接
+            let text = sortList.map { $0.text }.joined(separator: "\n")
+            let notice = notices.first!
+            sendNotice(text: text, title: notice.title, icon: notice.icon, group: notice.groupName)
+        }
     }
 }
 
 extension ATNotice {
     struct ATNoticeValue {
-        let text: String
-        let index: Int
+        var title:String = ""
+        let groupName:String
+        let icon:String
+        var text: String = ""
+        var index: Int = 99
+        init(groupName:String, icon:String) {
+            self.groupName = groupName
+            self.icon = icon
+        }
     }
     
     struct ATNoticeApiData: NetworkData {

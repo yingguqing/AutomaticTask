@@ -32,7 +32,7 @@ protocol NetworkData {
     // 请求方式
     var method: HttpMethod { get }
     // 请求request
-    var request: URLRequest? { get }
+    var request: ATRequest? { get }
 }
 
 extension NetworkData {
@@ -61,11 +61,11 @@ extension NetworkData {
     }
 
     /// 请求request
-    var request: URLRequest? {
+    var request: ATRequest? {
         guard let url = self.url else { return nil }
-        var request = URLRequest(url: url)
+        var request = ATRequest(url: url)
         // 设置超时时间
-        request.timeoutInterval = 45
+        request.timeoutInterval = 30
         request.httpMethod = method.rawValue
         if let cookies = cookieString {
             request.httpShouldHandleCookies = true
@@ -106,7 +106,7 @@ class ATRequestManager {
             complete?(.nilValue)
             return
         }
-        var request = URLRequest(url: url)
+        var request = ATRequest(url: url)
         request.timeoutInterval = 15
         dataTask(request: request, complete: complete)
     }
@@ -118,7 +118,7 @@ class ATRequestManager {
         guard let url = URL(string: url) else {
             return .nilValue
         }
-        var request = URLRequest(url: url)
+        var request = ATRequest(url: url)
         request.timeoutInterval = 15
         return dataTask(request: request, isAsync: false, complete: nil)
     }
@@ -144,7 +144,7 @@ class ATRequestManager {
     ///   - isUseCookie: 是否使用cookie
     ///   - isAsync: 是否使用异步请求
     ///   - complete: 回调
-    @discardableResult private func dataTask(request: URLRequest?, isAsync: Bool = true, complete: ((ATResult) -> Void)?) -> ATResult {
+    @discardableResult private func dataTask(request: ATRequest?, isAsync: Bool = true, complete: ((ATResult) -> Void)?) -> ATResult {
         guard let request = request else {
             complete?(.nilValue)
             return .nilValue
@@ -158,6 +158,11 @@ class ATRequestManager {
                 result.cookies = HTTPCookie.cookies(withResponseHeaderFields: fields, for: url)
             }
             if isAsync {
+                // 网络失败，且可以重试时
+                if let _ = error, let request = request.retry {
+                    dataTask(request: request, isAsync: isAsync, complete: complete)
+                    return .nilValue
+                }
                 complete?(result)
             } else {
                 returnResult = result
@@ -175,6 +180,9 @@ class ATRequestManager {
                 task.cancel()
                 break
             }
+        }
+        if let _ = returnResult?.error, let request = request.retry {
+            return dataTask(request: request, isAsync: isAsync, complete: complete)
         }
         return returnResult!
     }

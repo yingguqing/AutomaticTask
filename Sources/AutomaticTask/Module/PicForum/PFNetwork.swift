@@ -260,15 +260,13 @@ extension PFNetwork {
     ///   - data: 相应地址
     ///   - title: 标题
     ///   - isCleanCookie: 是否清除所有cookie
-    ///   - failTimes: 失败次数
-    @discardableResult func html(data: PFNetworkData, title: String = "", failTimes: Int = 0) -> PFResult {
+    @discardableResult func html(data: PFNetworkData, title: String = "") -> PFResult {
         // 更新cookies
         let param = data.updateCookies(cookies)
         let resultData = requestManager.syncSend(data: param)
         let htmlString = resultData.data?.text
-        if failTimes < 5 && (htmlString?.contains("400 Bad Request") == true || resultData.error?.code == ATError.Timeout.code) {
-            return html(data: data, title: title, failTimes: failTimes + 1)
-        } else if let htmlString = htmlString {
+        // "400 Bad Request"
+        if let htmlString = htmlString {
             updateCookies(resultData.cookies)
             return PFResult(html: htmlString)
         } else {
