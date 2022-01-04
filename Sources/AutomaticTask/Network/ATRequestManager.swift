@@ -94,6 +94,18 @@ struct ATResult {
     }
 }
 
+class ATRequest: URLRequest {
+    // 重试次数，如果不需要重试，就设置成0
+    var retryTimes:Int = 5
+
+    // 如果可以重试，就返回重试请求
+    var retry:ATRequest? {
+        guard retryTimes > 0 else { return nil }
+        retryTimes -= 1
+        return self
+    }
+}
+
 class ATRequestManager {
     static let `default` = ATRequestManager()
 
@@ -160,8 +172,7 @@ class ATRequestManager {
             if isAsync {
                 // 网络失败，且可以重试时
                 if let _ = error, let request = request.retry {
-                    dataTask(request: request, isAsync: isAsync, complete: complete)
-                    return .nilValue
+                    return dataTask(request: request, isAsync: isAsync, complete: complete)
                 }
                 complete?(result)
             } else {
