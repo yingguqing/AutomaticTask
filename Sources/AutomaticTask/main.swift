@@ -55,6 +55,7 @@ struct Repeat: ParsableCommand {
             }
             // 超时直接结束
             if Date().timeIntervalSince1970 - star >= timeout {
+                print("任务超过最大时长。")
                 break
             }
             RunLoop.current.run(mode: .default, before: .init(timeIntervalSinceNow: 10))
