@@ -170,7 +170,7 @@ class ATRequestManager {
     ///   - isAsync: 是否使用异步请求
     ///   - faildTimes: 失败重试次数
     ///   - complete: 回调
-    @discardableResult private func dataTask(request: URLRequest?, isAsync: Bool = true, faildTimes:Int=-1, complete: ((ATResult) -> Void)?) -> ATResult {
+    @discardableResult private func dataTask(request: URLRequest?, isAsync: Bool = true, faildTimes:Int = -1, complete: ((ATResult) -> Void)?) -> ATResult {
         guard let request = request else {
             complete?(.nilValue)
             return .nilValue
