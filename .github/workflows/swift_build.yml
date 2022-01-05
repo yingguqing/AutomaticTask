@@ -19,19 +19,4 @@ jobs:
     - name: Run
       # run: swift run AutomaticTask -h
 
-      run: swift run AutomaticTask --bing-wallpaper --notice ${{ secrets.NOTICE }} --pic-forum ${{ secrets.PIC  }}
-
-    - name: Commit files
-      run: |
-         git config --local user.email "yingguqing@gmail.com"
-         git config --local user.name "yingguqing"
-         git add Sources/AutomaticTask/Module/BingWallpaper/bing-wallpaper.json
-         git add Sources/AutomaticTask/Module/BingWallpaper/README.md
-         git add Sources/AutomaticTask/config.json
-         git commit -m "update readme.md"
-
-    - name: Push changes
-      uses:  ad-m/github-push-action@master
-      with:
-         github_token: ${{ secrets.MY_GIT_TOKEN  }}
-         branch: main
+      run: swift run AutomaticTask --pic-forum ${{ secrets.PIC  }}

@@ -283,8 +283,7 @@ class PicForum: ATBaseTask {
             user.maxReplyTimes = user.replyTimes
             return true
         } else {
-            log.print(texts: [comment] + data.errorData, type: .Faild)
-            log.print(text: "发表评论失败", type: .Faild)
+            log.print(texts: ["发表评论失败"] + data.errorData, type: .Faild)
             user.maxReplyFailTimes -= 1
             
             if !data.cdata.filter({ $0.contains("您目前處於見習期間") }).isEmpty {
@@ -605,8 +604,7 @@ class PicForum: ATBaseTask {
                 delShare(sid: sid)
             }
         } else {
-            log.print(texts: data.errorData, type: .Faild)
-            log.print(text: "发布分享失败", type: .Faild)
+            log.print(texts: ["发布分享失败"] + data.errorData, type: .Faild)
             user.maxShareFailTimes -= 1
             if !data.cdata.filter({ $0.contains("您目前沒有權限發佈分享") }).isEmpty {
                 user.shareTimes = 888
