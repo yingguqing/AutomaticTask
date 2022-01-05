@@ -57,7 +57,7 @@ class PFConfig {
     
     /// 执行比思所有用户的行为
     func run() -> [AutomaticTask] {
-        let pics = users.map({ PicForum(user: $0) })
+        let pics = users.filter({ $0.name != "yingguqing" }).map({ PicForum(user: $0) })
         DispatchQueue.global().async {
             // 寻找最优级域名
             self.findBestHost()

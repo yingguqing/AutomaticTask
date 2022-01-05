@@ -180,7 +180,8 @@ class ATRequestManager {
         var returnResult: ATResult?
         let task = session.dataTask(with: request) { data, response, error in
             var result = ATResult(data: data, error: ATError(error: error))
-            if request.httpShouldHandleCookies, let url = response?.url, let httpResponse = response as? HTTPURLResponse, let fields = httpResponse.allHeaderFields as? [String: String] {
+            // request.httpShouldHandleCookies, 
+            if let url = response?.url, let httpResponse = response as? HTTPURLResponse, let fields = httpResponse.allHeaderFields as? [String: String] {
                 result.cookies = HTTPCookie.cookies(withResponseHeaderFields: fields, for: url)
             }
             if isAsync {
