@@ -47,7 +47,7 @@ class PFUser {
     // 最大分享次数
     let maxShareTimes = 3
     // 评论最大失败次数
-    var maxReplyFailTimes = 10
+    var maxReplyFailTimes = 5
     // 留言的最大失败次数
     var maxLeaveMsgFailTimes = 5
     // 发表记录的最大失败次数

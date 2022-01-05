@@ -187,6 +187,7 @@ class PicForum: ATBaseTask {
         let data = network.html(data: param)
         if !data.cdata.isEmpty {
             forum()
+            log.print(text: "formhash:\(formhash)", type: .Success)
             guard formhash.isEmpty else { return true }
             log.print(text: "formhash获取失败", type: .Faild)
             return false

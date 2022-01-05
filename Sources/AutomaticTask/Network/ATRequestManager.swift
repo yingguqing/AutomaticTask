@@ -176,6 +176,7 @@ class ATRequestManager {
             return .nilValue
         }
         let configuration = URLSessionConfiguration.ephemeral
+        // configuration.timeoutIntervalForRequest = 10(超时时间)
         let session = URLSession(configuration: configuration)
         var returnResult: ATResult?
         let task = session.dataTask(with: request) { data, response, error in
