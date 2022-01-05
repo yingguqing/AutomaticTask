@@ -87,7 +87,7 @@ class PFConfig {
                 for host in hosts {
                     let url = host.urlAppendPathComponent(PFNetwork.API.Home.api)
                     let star = Date().timeIntervalSince1970
-                    let data = ATRequestManager.default.syncSend(url: url)
+                    let data = ATRequestManager.default.syncSend(url: url, faildTimes: -1)
                     let time:Double
                     if data.data?.text?.contains("比思論壇") == true {
                         time = Date().timeIntervalSince1970 - star

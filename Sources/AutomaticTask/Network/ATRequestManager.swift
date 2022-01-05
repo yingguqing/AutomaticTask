@@ -139,13 +139,13 @@ class ATRequestManager {
     /// 同步发送网络请求
     /// - url: 请求URL
     /// - Returns: (网络数据，错误)
-    func syncSend(url: String) -> ATResult {
+    func syncSend(url: String, faildTimes:Int = -1) -> ATResult {
         guard let url = URL(string: url) else {
             return .nilValue
         }
         var request = URLRequest(url: url)
         request.timeoutInterval = Timeout
-        return dataTask(request: request, isAsync: false, complete: nil)
+        return dataTask(request: request, isAsync: false, faildTimes: faildTimes, complete: nil)
     }
 
     /// 异步发送网络请求
