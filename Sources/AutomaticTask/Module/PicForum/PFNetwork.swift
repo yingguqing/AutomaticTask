@@ -295,18 +295,10 @@ extension PFNetwork {
     /// 更新Cookies
     /// - Parameter cookies: 新cookies
     func updateCookies(_ cookies: [HTTPCookie]) {
-        // 删除同名的cookie，保留最新的
-        var newCookies = self.cookies + cookies
-        var names = Set<String>()
-        var removeIndex = [Int]()
-        for (index, value) in newCookies.enumerated() {
-            if names.contains(value.name) {
-                removeIndex.append(index)
-            } else {
-                names.insert(value.name)
-            }
-        }
-        removeIndex.reversed().forEach({ newCookies.remove(at: $0) })
-        self.cookies = newCookies
+        // 提取新cookies的名称
+        let names = cookies.map({ $0.name })
+        // 删除同名的cookie
+        self.cookies.removeAll{ names.contains($0.name) }
+        self.cookies += cookies
     }
 }

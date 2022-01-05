@@ -201,7 +201,7 @@ class ATRequestManager {
         // 计算超时的最终时间戳
         let end = Date().timeIntervalSince1970 + request.timeoutInterval + 5
         while returnResult == nil {
-            RunLoop.current.run(mode: .default, before: .init(timeIntervalSinceNow: 1))
+            _ = RunLoop.current.run(mode: .default, before: .init(timeIntervalSinceNow: 1))
             if Date().timeIntervalSince1970 >= end {
                 returnResult = ATResult(data: nil, error: .Timeout)
                 task.cancel()
