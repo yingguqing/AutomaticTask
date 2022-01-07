@@ -60,7 +60,7 @@ class PFConfig {
         let pics = users.filter({ $0.name != "yingguqing" }).map({ PicForum(user: $0) })
         DispatchQueue.global().async {
             // 寻找最优级域名
-            self.findBestHost()
+            // self.findBestHost()
             for pic in pics {
                 DispatchQueue.global().async {
                     pic.run()
