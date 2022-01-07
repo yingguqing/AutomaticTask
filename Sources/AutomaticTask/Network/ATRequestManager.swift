@@ -170,13 +170,13 @@ class ATRequestManager {
     ///   - isAsync: 是否使用异步请求
     ///   - faildTimes: 失败重试次数
     ///   - complete: 回调
-    @discardableResult private func dataTask(request: URLRequest?, isAsync: Bool = true, faildTimes:Int = 3, complete: ((ATResult) -> Void)?) -> ATResult {
+    @discardableResult private func dataTask(request: URLRequest?, isAsync: Bool = true, faildTimes:Int = 5, complete: ((ATResult) -> Void)?) -> ATResult {
         guard let request = request else {
             complete?(.nilValue)
             return .nilValue
         }
         let configuration = URLSessionConfiguration.ephemeral
-        // configuration.timeoutIntervalForRequest = 10(超时时间)
+        // configuration.timeoutIntervalForRequest = 10
         let session = URLSession(configuration: configuration)
         var returnResult: ATResult?
         let task = session.dataTask(with: request) { data, response, error in

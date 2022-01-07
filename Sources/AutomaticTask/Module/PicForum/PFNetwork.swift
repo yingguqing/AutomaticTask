@@ -263,9 +263,6 @@ extension PFNetwork {
     @discardableResult func html(data: PFNetworkData, title: String = "") -> PFResult {
         // 更新cookies
         let param = data.updateCookies(cookies)
-        if param.type == .Reply {
-            log?.print(text: "cookies:\(param.cookieString)", type: .Info)
-        }
         let resultData = requestManager.syncSend(data: param)
         let htmlString = resultData.data?.text
         // "400 Bad Request"
@@ -279,7 +276,7 @@ extension PFNetwork {
         }
     }
     
-    /// 获取用户金币数
+    /// 获取用户金钱数
     /// - Parameters:
     ///   - id: 用户id
     ///   - complete: 回调
@@ -291,7 +288,7 @@ extension PFNetwork {
         if let money = Int(regex.firstGroup(in: data.html) ?? "") {
             return money
         }
-        print("获取金币失败：\(data.error?.localizedDescription ?? "")--\(netData.url?.absoluteString ?? "")")
+        // print("获取金钱失败：\(data.error?.localizedDescription ?? "")--\(netData.url?.absoluteString ?? "")")
         return -1
     }
     

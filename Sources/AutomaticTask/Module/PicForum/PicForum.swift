@@ -20,7 +20,7 @@ enum PicType: String {
     var sleepSec: UInt32 {
         switch self {
             case .Reply, .Journal, .LeaveMessage:
-                return 51
+                return 55
             case .Record:
                 return 61
             case .Share:
@@ -100,6 +100,7 @@ class PicForum: ATBaseTask {
     func run() {
         defer { finish() }
         log.print(text: "------------- \(user.name) 比思签到 -------------", type: .Normal)
+        log.print(text: "历史：\(user.historyMoney >= 0 ? String(user.historyMoney)! : "获取历史金钱失败")", type: .Normal)
         // 登录
         guard login() else { return }
         // 签到
@@ -125,7 +126,7 @@ class PicForum: ATBaseTask {
         user.reloadMoney()
         user.save()
         if user.historyMoney > -1 {
-            log.print(text: "增加金币：\(user.money - user.historyMoney)", type: .Cyan)
+            log.print(text: "增加：\(user.money - user.historyMoney)", type: .Cyan)
         }
         log.print(text: "金钱：\(user.money)", type: .White)
         log.print(text: "休息：\(Double(sleepTime).timeFromat)", type: .White)

@@ -17,6 +17,6 @@ jobs:
     - name: Build
       run: swift build
     - name: Run
-      # run: swift run AutomaticTask -h
+      run: swift run AutomaticTask -h
 
-      run: swift run AutomaticTask --pic-forum ${{ secrets.PIC  }}
+      # run: swift run AutomaticTask --pic-forum ${{ secrets.PIC  }}
