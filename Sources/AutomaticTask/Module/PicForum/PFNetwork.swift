@@ -263,7 +263,9 @@ extension PFNetwork {
     @discardableResult func html(data: PFNetworkData, title: String = "") -> PFResult {
         // 更新cookies
         let param = data.updateCookies(cookies)
-        log?.print(text: "cookies:\(param.cookies.count)", type: .Info)
+        if param.type == .Reply {
+            log?.print(text: "cookies:\(param.cookieString)", type: .Info)
+        }
         let resultData = requestManager.syncSend(data: param)
         let htmlString = resultData.data?.text
         // "400 Bad Request"
