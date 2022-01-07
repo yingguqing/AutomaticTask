@@ -100,7 +100,7 @@ class PicForum: ATBaseTask {
     func run() {
         defer { finish() }
         log.print(text: "------------- \(user.name) 比思签到 -------------", type: .Normal)
-        log.print(text: "历史：\(user.historyMoney >= 0 ? String(user.historyMoney)! : "获取历史金钱失败")", type: .Normal)
+        log.print(text: "历史：\(user.historyMoney >= 0 ? String(user.historyMoney) : "获取历史金钱失败")", type: .Normal)
         // 登录
         guard login() else { return }
         // 签到
