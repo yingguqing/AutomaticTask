@@ -130,6 +130,21 @@ extension PFUser {
         return isRecord && maxRecordFailTimes > 0
     }
     
+    // 新增金钱。格式1：100 = 90 + 10,格式2：+10 -> 100
+    func moneyAddition(_ type:Int) -> String {
+        guard historyMoney > -1 else { return "\(money)" }
+        let temp = money - historyMoney
+        guard temp > 0 else { return "\(money)" }
+        switch type {
+            case 1:
+                return "\(money) = \(historyMoney) + \(temp)"
+            case 2:
+                return "+\(temp) -> \(money)"
+            default:
+                return "\(money)"
+        }
+    }
+
     /// 保存的数据
     fileprivate var saveValue: [String: Any] {
         var value: [String: Any] = [

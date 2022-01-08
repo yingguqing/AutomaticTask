@@ -19,10 +19,12 @@ enum PicType: String {
     // 比思各类型发表需要休息时间
     var sleepSec: UInt32 {
         switch self {
-            case .Reply, .Journal, .LeaveMessage:
+            case .Reply:
+                return 58
+            case .Journal, .LeaveMessage:
                 return 55
             case .Record:
-                return 61
+                return 51
             case .Share:
                 return 3
             case .Other:
@@ -100,7 +102,9 @@ class PicForum: ATBaseTask {
     func run() {
         defer { finish() }
         log.print(text: "------------- \(user.name) 比思签到 -------------", type: .Normal)
-        log.print(text: "历史：\(user.historyMoney >= 0 ? String(user.historyMoney) : "获取历史金钱失败")", type: .Normal)
+        if user.historyMoney < 0 {
+            log.print(text: "获取历史金钱失败", type: .Faild)
+        }
         // 登录
         guard login() else { return }
         // 签到
@@ -125,10 +129,7 @@ class PicForum: ATBaseTask {
         deleteAllleavMessageDynamic()
         user.reloadMoney()
         user.save()
-        if user.historyMoney > -1 {
-            log.print(text: "增加：\(user.money - user.historyMoney)", type: .Cyan)
-        }
-        log.print(text: "金钱：\(user.money)", type: .White)
+        log.print(text: "金钱：\(user.moneyAddition(1))", type: .Cyan)
         log.print(text: "休息：\(Double(sleepTime).timeFromat)", type: .White)
     }
     
@@ -140,7 +141,7 @@ class PicForum: ATBaseTask {
         log.printLog()
         super.finish(finish)
         var noticeValue = PFConfig.default.noticeValue
-        noticeValue.text = "\(user.name):\(user.money)"
+        noticeValue.text = "\(user.name):\(user.moneyAddition(2))"
         noticeValue.index = user.index
         noticeValue.title = "比思金币"
         ATNotice.default.addNotice(noticeValue)
@@ -188,7 +189,6 @@ class PicForum: ATBaseTask {
         let data = network.html(data: param)
         if !data.cdata.isEmpty {
             forum()
-            log.print(text: "formhash:\(formhash)", type: .Success)
             guard formhash.isEmpty else { return true }
             log.print(text: "formhash获取失败", type: .Faild)
             return false
