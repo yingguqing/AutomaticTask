@@ -188,7 +188,7 @@ class ATRequestManager {
             if isAsync {
                 // 网络失败，且可以重试时
                 if let _ = error, faildTimes > 0 {
-                    print("\(faildTimes)-重试：\(request.URL.absoluteString)")
+                    print("\(faildTimes)-重试：\(response?.url.absoluteString ?? "")")
                     self.dataTask(request: request, isAsync: isAsync, faildTimes: faildTimes-1, complete: complete)
                     return
                 }
