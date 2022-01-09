@@ -47,14 +47,14 @@ class ATNotice: ATBaseTask {
             let json = result.data?.json as? [String: Any]
             let code = json?["code"] as? Int
             if code != 200 {
-                var msg = ""
-                if let data = result.data {
-                    msg = String(data: data, encoding: .utf8) ?? ""
+                var msg = [String]()
+                if let data = result.data, let m = String(data: data, encoding: .utf8) {
+                    msg.append(m)
                 }
                 if let error = result.error {
-                    msg.append(" | \(error.localizedDescription)")
+                    msg.append(error.localizedDescription)
                 }
-                print("发送通知失败：\(msg)")
+                print("发送通知失败：\(msg.joined(separator: " | "))")
             }
             self.finish(isFinish)
         }
