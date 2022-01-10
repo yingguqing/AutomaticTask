@@ -65,7 +65,7 @@ extension NetworkData {
         guard let url = self.url else { return nil }
         var request = URLRequest(url: url)
         // 设置超时时间
-        request.timeoutInterval = Timeout
+        // request.timeoutInterval = Timeout
         request.httpMethod = method.rawValue
         if let cookies = cookieString {
             request.httpShouldHandleCookies = true
@@ -132,7 +132,7 @@ class ATRequestManager {
             return
         }
         var request = URLRequest(url: url)
-        request.timeoutInterval = Timeout
+        // request.timeoutInterval = Timeout
         dataTask(request: request, complete: complete)
     }
 
@@ -144,7 +144,7 @@ class ATRequestManager {
             return .nilValue
         }
         var request = URLRequest(url: url)
-        request.timeoutInterval = Timeout
+        // request.timeoutInterval = Timeout
         return dataTask(request: request, isAsync: false, faildTimes: faildTimes, complete: nil)
     }
 

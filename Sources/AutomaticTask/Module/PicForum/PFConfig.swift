@@ -57,7 +57,7 @@ class PFConfig {
     
     /// 执行比思所有用户的行为
     func run() -> [AutomaticTask] {
-        let pics = users.filter({ $0.name != "yingguqing" }).map({ PicForum(user: $0) })
+        let pics = users.map({ PicForum(user: $0) }) // .filter({ $0.name != "yingguqing" })
         DispatchQueue.global().async {
             // 寻找最优级域名，其他域名会造成发表失败（抱歉，您的請求來路不正確或表單驗證串不符，無法提交），暂时没有解决方案
             // self.findBestHost()
