@@ -19,7 +19,7 @@ on: #[push]
 jobs:
   build:
 
-    runs-on: ubuntu-latest #ubuntu-latest macos-latest
+    runs-on: macos-latest #ubuntu-latest macos-latest
 
     steps:
     - uses: actions/checkout@v2
