@@ -150,7 +150,6 @@ extension PFUser {
         var value: [String: Any] = [
             "name": name,
             "money": money,
-            "user_id": userId,
             "date": date,
             "is_visit_other_zone": isVisitOtherZone,
             "reply_times": replyTimes,
