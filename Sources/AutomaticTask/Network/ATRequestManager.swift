@@ -131,7 +131,6 @@ class ATRequestManager {
         let configuration = URLSessionConfiguration.ephemeral
         // configuration.timeoutIntervalForRequest = 10
         let session = URLSession(configuration: configuration)
-        var returnResult: ATResult?
         let task = session.dataTask(with: request) { data, response, error in
             var result = ATResult(data: data, error: ATError(error: error))
             // request.httpShouldHandleCookies, 

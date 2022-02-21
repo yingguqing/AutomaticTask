@@ -264,22 +264,21 @@ extension PFNetwork {
     @discardableResult func html(data: PFNetworkData, title: String = "") -> PFResult {
         // 更新cookies
         let param = data.updateCookies(cookies)
-        var data:PFResult? = nil
+        var returnData:PFResult? = nil
         requestManager.send(data: param){ result in
-            let htmlString = result.data?.text
             // "400 Bad Request"
-            if let htmlString = htmlString {
-                updateCookies(result.cookies)
-                data = PFResult(html: htmlString)
+            if let htmlString = result.data?.text {
+                self.updateCookies(result.cookies)
+                returnData = PFResult(html: htmlString)
             } else {
                 let msg = "\(title.isEmpty ? data.type.rawValue : title)失败：\(result.error?.localizedDescription ?? data.url?.absoluteString ?? "")"
-                log?.print(text: msg, type: .Faild)
-                data = PFResult(error: result.error)
+                self.log?.print(text: msg, type: .Faild)
+                returnData = PFResult(error: result.error)
             }
             self.semaphore.signal()
         }
         semaphore.wait()
-        return data ?? PFResult(error: .UnKnow)
+        return returnData ?? PFResult(error: .UnKnow)
     }
     
     /// 获取用户金钱数

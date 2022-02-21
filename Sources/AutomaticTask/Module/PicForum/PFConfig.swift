@@ -73,9 +73,10 @@ class PFConfig {
     
     /// 通过域名发布地址，查找最优级域名
     func findBestHost() {
+        /*
         defer { print("本次最优域名：\(self.host)") }
         guard !hostURL.isEmpty else { return }
-        let allHostData = ATRequestManager.default.syncSend(url: hostURL)
+        let allHostData = ATRequestManager.default.send(url: hostURL)
         guard let allHostString = allHostData.data?.text else { return }
         let array = allHostString.replacingOccurrences(of: "\n", with: "").replacingOccurrences(of: " ", with: "").components(separatedBy: "<br>").filter({ !$0.isEmpty })
         if let index = array.firstIndex(of: "比思永久域名") {
@@ -102,5 +103,6 @@ class PFConfig {
             let best = hostDic.min(by: { $0.1 < $1.1 })
             self.host = best?.0 ?? host
         }
+        */
     }
 }
