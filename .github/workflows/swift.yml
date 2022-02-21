@@ -1,7 +1,7 @@
 name: 自动任务
 
-on: #[push]
-  workflow_dispatch
+on: [push]
+  #workflow_dispatch
   # 定时任务
   # schedule:
   #         ┌───────────────────── minute (0 - 59)
