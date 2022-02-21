@@ -11,12 +11,12 @@ class BWNetwork: NetworkData {
     
     static let `default` = BWNetwork()
     var host: String = "https://cn.bing.com"
-    var api: String = "HPImageArchive.aspx?format=js&idx=0&n=10&nc=1612409408851&pid=hp&FORM=BEHPTB&uhd=1&uhdwidth=3840&uhdheight=2160"
+    var api: String? = "HPImageArchive.aspx?format=js&idx=0&n=10&nc=1612409408851&pid=hp&FORM=BEHPTB&uhd=1&uhdwidth=3840&uhdheight=2160"
     var headerFields: [String: String?]?  = ["User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"]
     
     /// 获取壁纸
     func getWallPaper(finish:(([String: Any]?)->Void)?) {
-        ATRequestManager.default.asyncSend(data: self) { result in
+        ATRequestManager.default.send(data: self) { result in
             let json = result.data?.json as? [String: Any]
             finish?(json)
         }

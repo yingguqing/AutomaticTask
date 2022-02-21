@@ -43,7 +43,7 @@ class ATNotice: ATBaseTask {
         data.title = title
         data.icon = icon
         data.group = group
-        ATRequestManager.default.asyncSend(data: data) { result in
+        ATRequestManager.default.send(data: data) { result in
             let json = result.data?.json as? [String: Any]
             let code = json?["code"] as? Int
             if code != 200 {
@@ -107,7 +107,7 @@ extension ATNotice {
     }
     
     struct ATNoticeApiData: NetworkData {
-        var api: String {
+        var api: String? {
             let arr = [noticeKey, title.urlEncode, text.urlEncode].filter { !$0.isEmpty }
             let params = ["icon": icon, "group": group].filter { !$0.1.isEmpty }
             var api = arr.joined(separator: "/")

@@ -20,7 +20,7 @@ protocol NetworkData {
     // 域名
     var host: String { get }
     // 请求api
-    var api: String { get }
+    var api: String? { get }
     // 具体的url
     var url: URL? { get }
     // cookie拼接成相应的样式
@@ -36,6 +36,11 @@ protocol NetworkData {
 }
 
 extension NetworkData {
+
+    var api: String? {
+        return nil
+    }
+
     var method: HttpMethod {
         return .GET
     }
@@ -53,6 +58,7 @@ extension NetworkData {
     }
 
     var url: URL? {
+        guard let api = api else { return URL(string: host) }
         var string = host
         if string.hasSuffix("/"), api.hasPrefix("?") {
             string = String(string.dropLast())
@@ -80,6 +86,12 @@ extension NetworkData {
     }
 }
 
+extension String: NetworkData {
+    var host: String {
+        return  self
+    }
+}
+
 struct ATResult {
     let data: Data?
     var cookies: [HTTPCookie]
@@ -94,86 +106,27 @@ struct ATResult {
     }
 }
 
-/*
-class ATRequest: URLRequest {
-    // 重试次数，如果不需要重试，就设置成0
-    var retryTimes:Int = 5
-
-    // 如果可以重试，就返回重试请求
-    var retry:ATRequest? {
-        guard retryTimes > 0 else { return nil }
-        retryTimes -= 1
-        return self
-    }
-    
-    init(url:URL) {
-        super.init(url: url)
-        // 设置超时时间
-        self.timeoutInterval = Timeout
-    }
-
-    init?(string:String) {
-        guard let url = URL(string: string) else { return nil }
-        self.init(url: url)
-    }
-}
-*/
-
 class ATRequestManager {
     static let `default` = ATRequestManager()
 
     /// 异步发送网络请求
     /// - Parameters:
-    ///   - url: 请求URL
-    ///   - complete: 完成回调
-    func asyncSend(url: String, complete: ((ATResult) -> Void)?) {
-        guard let url = URL(string: url) else {
-            complete?(.nilValue)
-            return
-        }
-        var request = URLRequest(url: url)
-        // request.timeoutInterval = Timeout
-        dataTask(request: request, complete: complete)
-    }
-
-    /// 同步发送网络请求
-    /// - url: 请求URL
-    /// - Returns: (网络数据，错误)
-    func syncSend(url: String, faildTimes:Int = -1) -> ATResult {
-        guard let url = URL(string: url) else {
-            return .nilValue
-        }
-        var request = URLRequest(url: url)
-        // request.timeoutInterval = Timeout
-        return dataTask(request: request, isAsync: false, faildTimes: faildTimes, complete: nil)
-    }
-
-    /// 异步发送网络请求
-    /// - Parameters:
     ///   - data: 请求URL数据
     ///   - complete: 完成回调
-    func asyncSend(data: NetworkData, complete: ((ATResult) -> Void)?) {
+    func send(data: NetworkData, complete: ((ATResult) -> Void)?) {
         dataTask(request: data.request, complete: complete)
-    }
-
-    /// 同步发送网络请求
-    /// - Parameter data: 请求URL数据
-    /// - Returns: (网络数据，错误)
-    func syncSend(data: NetworkData) -> ATResult {
-        return dataTask(request: data.request, isAsync: false, complete: nil)
     }
 
     /// 网络请求
     /// - Parameters:
     ///   - request: 请求的数据
     ///   - isUseCookie: 是否使用cookie
-    ///   - isAsync: 是否使用异步请求
     ///   - faildTimes: 失败重试次数
     ///   - complete: 回调
-    @discardableResult private func dataTask(request: URLRequest?, isAsync: Bool = true, faildTimes:Int = 5, complete: ((ATResult) -> Void)?) -> ATResult {
+    private func dataTask(request: URLRequest?, faildTimes:Int = 5, complete: ((ATResult) -> Void)?) {
         guard let request = request else {
             complete?(.nilValue)
-            return .nilValue
+            return
         }
         let configuration = URLSessionConfiguration.ephemeral
         // configuration.timeoutIntervalForRequest = 10
@@ -185,34 +138,14 @@ class ATRequestManager {
             if let url = response?.url, let httpResponse = response as? HTTPURLResponse, let fields = httpResponse.allHeaderFields as? [String: String] {
                 result.cookies = HTTPCookie.cookies(withResponseHeaderFields: fields, for: url)
             }
-            if isAsync {
-                // 网络失败，且可以重试时
-                if let _ = error, faildTimes > 0 {
-                    print("\(faildTimes)-重试")
-                    self.dataTask(request: request, isAsync: isAsync, faildTimes: faildTimes-1, complete: complete)
-                    return
-                }
-                complete?(result)
-            } else {
-                returnResult = result
+            // 网络失败，且可以重试时
+            if let _ = error, faildTimes > 0 {
+                print("\(faildTimes)-重试")
+                self.dataTask(request: request, isAsync: isAsync, faildTimes: faildTimes-1, complete: complete)
+                return
             }
+            complete?(result)
         }
         task.resume()
-        // 同步请求
-        guard !isAsync else { return .nilValue }
-        // 计算超时的最终时间戳
-        let end = Date().timeIntervalSince1970 + request.timeoutInterval + 5
-        while returnResult == nil {
-            _ = RunLoop.current.run(mode: .default, before: .init(timeIntervalSinceNow: 1))
-            if Date().timeIntervalSince1970 >= end {
-                returnResult = ATResult(data: nil, error: .Timeout)
-                task.cancel()
-                break
-            }
-        }
-        if let _ = returnResult?.error, faildTimes > 0 {
-            return dataTask(request: request, isAsync: isAsync, faildTimes: faildTimes-1, complete: complete)
-        }
-        return returnResult!
     }
 }

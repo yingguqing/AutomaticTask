@@ -49,6 +49,7 @@ class PFNetwork {
     var cookies = [HTTPCookie]()
     // 日志系统
     var log:ATPrintLog?
+    private let semaphore = DispatchSemaphore(value: 0)
     
     struct PFNetworkData: NetworkData {
         static let defaultHeader = [
@@ -84,7 +85,7 @@ class PFNetwork {
             return header
         }
         
-        var api: String {
+        var api: String? {
             let apiString = type.api
             if type == .Zone {
                 let userId = apiValue["uid"] ?? ""
@@ -263,17 +264,22 @@ extension PFNetwork {
     @discardableResult func html(data: PFNetworkData, title: String = "") -> PFResult {
         // 更新cookies
         let param = data.updateCookies(cookies)
-        let resultData = requestManager.syncSend(data: param)
-        let htmlString = resultData.data?.text
-        // "400 Bad Request"
-        if let htmlString = htmlString {
-            updateCookies(resultData.cookies)
-            return PFResult(html: htmlString)
-        } else {
-            let msg = "\(title.isEmpty ? data.type.rawValue : title)失败：\(resultData.error?.localizedDescription ?? data.url?.absoluteString ?? "")"
-            log?.print(text: msg, type: .Faild)
-            return PFResult(error: resultData.error)
+        var data:PFResult? = nil
+        requestManager.send(data: param){ result in
+            let htmlString = result.data?.text
+            // "400 Bad Request"
+            if let htmlString = htmlString {
+                updateCookies(result.cookies)
+                data = PFResult(html: htmlString)
+            } else {
+                let msg = "\(title.isEmpty ? data.type.rawValue : title)失败：\(result.error?.localizedDescription ?? data.url?.absoluteString ?? "")"
+                log?.print(text: msg, type: .Faild)
+                data = PFResult(error: result.error)
+            }
+            self.semaphore.signal()
         }
+        semaphore.wait()
+        return data ?? PFResult(error: .UnKnow)
     }
     
     /// 获取用户金钱数
