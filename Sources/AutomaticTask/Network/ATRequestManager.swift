@@ -141,7 +141,7 @@ class ATRequestManager {
             // 网络失败，且可以重试时
             if let _ = error, faildTimes > 0 {
                 print("\(faildTimes)-重试")
-                self.dataTask(request: request, isAsync: isAsync, faildTimes: faildTimes-1, complete: complete)
+                self.dataTask(request: request, faildTimes: faildTimes-1, complete: complete)
                 return
             }
             complete?(result)
