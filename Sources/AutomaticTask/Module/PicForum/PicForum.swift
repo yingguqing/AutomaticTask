@@ -275,7 +275,7 @@ class PicForum: ATBaseTask {
             if !user.reloadMoney() {
                 // 如果发表评论后，金币数不增加，就不再发表评论
                 log.print(text: "评论：\(user.replyTimes)，达到每日上限。不再发表评论。", type: .Warn)
-                user.replyTimes = 9999
+                user.replyTimes += 1000
             }
             user.save()
             return true
@@ -521,7 +521,7 @@ class PicForum: ATBaseTask {
             if !user.reloadMoney() {
                 // 如果发表后，金币数不增加，就不再发表
                 log.print(text: "日志:\(user.journalTimes)，达到每日上限。", type: .Warn)
-                user.journalTimes = 9999
+                user.journalTimes += 1000
                 user.save()
             }
         } else {
