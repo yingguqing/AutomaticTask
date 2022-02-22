@@ -274,7 +274,7 @@ class PicForum: ATBaseTask {
             log.debugPrint(text: "第\(user.replyTimes)条：「\(comment)」-> 發佈成功", type: .Success)
             if !user.reloadMoney() {
                 // 如果发表评论后，金币数不增加，就不再发表评论
-                log.print(text: "评论达到每日上限。不再发表评论。", type: .Warn)
+                log.print(text: "评论：\(user.replyTimes)，达到每日上限。不再发表评论。", type: .Warn)
                 user.replyTimes = 9999
             }
             user.save()
@@ -520,7 +520,7 @@ class PicForum: ATBaseTask {
             log.debugPrint(text: "第\(user.journalTimes)篇日志：「\(title)」-> 發佈成功", type: .Success)
             if !user.reloadMoney() {
                 // 如果发表后，金币数不增加，就不再发表
-                log.print(text: "发表日志达到每日上限。", type: .Warn)
+                log.print(text: "日志:\(user.journalTimes)，达到每日上限。", type: .Warn)
                 user.journalTimes = 9999
                 user.save()
             }

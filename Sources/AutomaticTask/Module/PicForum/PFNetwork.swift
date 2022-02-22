@@ -288,12 +288,12 @@ extension PFNetwork {
     class func userMoney(id: Int) -> Int {
         guard id > 999 else { return -1 }
         let netData = PFNetworkData(header: PFNetworkData.defaultHeader, api: ["uid": "\(id)"], .Zone)
-        let data = PFNetwork.default.html(data: netData)
+        let data = PFNetwork().html(data: netData)
         let regex = try! Regex("<li>金錢:\\s*<a href=\".*?\">(\\d+)</a>", options: [.ignoreCase])
         if let money = Int(regex.firstGroup(in: data.html) ?? "") {
             return money
         }
-        // print("获取金钱失败：\(data.error?.localizedDescription ?? "")--\(netData.url?.absoluteString ?? "")")
+        print("获取金钱失败：\(id)")
         return -1
     }
     
