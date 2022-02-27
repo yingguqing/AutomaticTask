@@ -71,7 +71,7 @@ extension NetworkData {
         guard let url = self.url else { return nil }
         var request = URLRequest(url: url)
         // 设置超时时间
-        // request.timeoutInterval = Timeout
+        request.timeoutInterval = Timeout
         request.httpMethod = method.rawValue
         if let cookies = cookieString {
             request.httpShouldHandleCookies = true
@@ -138,8 +138,8 @@ class ATRequestManager {
                 result.cookies = HTTPCookie.cookies(withResponseHeaderFields: fields, for: url)
             }
             // 网络失败，且可以重试时
-            if let _ = error, faildTimes > 0 {
-                print("\(faildTimes)-重试")
+            if let error = error, faildTimes > 0 {
+                print("\(faildTimes)-重试:\(error.localizedDescription)")
                 sleep(1)
                 self.dataTask(request: request, faildTimes: faildTimes-1, complete: complete)
                 return
