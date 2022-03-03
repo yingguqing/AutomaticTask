@@ -8,7 +8,7 @@
 import Foundation
 
 // 全局超时时间
-let Timeout:Double = 45
+let Timeout:Double = 60
 
 protocol AutomaticTask {
     var timeout:Int { get }

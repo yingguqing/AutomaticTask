@@ -58,7 +58,7 @@ struct Repeat: ParsableCommand {
                 print("任务超过最大时长。")
                 break
             }
-            _ = RunLoop.current.run(mode: .default, before: .init(timeIntervalSinceNow: 10))
+            sleep(10)
         }
         let time = Date().timeIntervalSince1970 - star
         print("总耗时：\(time.timeFromat)")

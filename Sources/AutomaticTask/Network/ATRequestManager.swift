@@ -112,9 +112,10 @@ class ATRequestManager {
     /// 异步发送网络请求
     /// - Parameters:
     ///   - data: 请求URL数据
+    ///   - faildTimes: 失败重试次数
     ///   - complete: 完成回调
-    func send(data: NetworkData, complete: ((ATResult) -> Void)?) {
-        dataTask(request: data.request, complete: complete)
+    func send(data: NetworkData, faildTimes:Int = 5, complete: ((ATResult) -> Void)?) {
+        dataTask(request: data.request, faildTimes: faildTimes, complete: complete)
     }
 
     /// 网络请求
@@ -123,7 +124,7 @@ class ATRequestManager {
     ///   - isUseCookie: 是否使用cookie
     ///   - faildTimes: 失败重试次数
     ///   - complete: 回调
-    private func dataTask(request: URLRequest?, faildTimes:Int = 5, complete: ((ATResult) -> Void)?) {
+    private func dataTask(request: URLRequest?, faildTimes:Int, complete: ((ATResult) -> Void)?) {
         guard let request = request else {
             complete?(.nilValue)
             return

@@ -71,38 +71,42 @@ class PFConfig {
         return pics
     }
     
-    /// 通过域名发布地址，查找最优级域名
+    /// 通过域名发布地址，查找最优级域名(功能不好用，以后有更好的方法时再修改)
     func findBestHost() {
-        /*
         defer { print("本次最优域名：\(self.host)") }
         guard !hostURL.isEmpty else { return }
-        let allHostData = ATRequestManager.default.send(url: hostURL)
-        guard let allHostString = allHostData.data?.text else { return }
-        let array = allHostString.replacingOccurrences(of: "\n", with: "").replacingOccurrences(of: " ", with: "").components(separatedBy: "<br>").filter({ !$0.isEmpty })
-        if let index = array.firstIndex(of: "比思永久域名") {
-            // 提取所有域名
-            let hosts = [self.host] + array.prefix(index).filter({ $0.hasPrefix("http")})
-            var hostDic = [String:Double]()
-            for _ in 0...5 {
-                // 测试延时最短的域名
-                for host in hosts {
-                    let url = host.urlAppendPathComponent(PFNetwork.API.Home.api)
-                    let star = Date().timeIntervalSince1970
-                    let data = ATRequestManager.default.syncSend(url: url, faildTimes: -1)
-                    let time:Double
-                    if data.data?.text?.contains("比思論壇") == true {
-                        time = Date().timeIntervalSince1970 - star
-                    } else {
-                        time = 20
+        ATRequestManager.default.send(data: hostURL) { allHostData in
+            guard let allHostString = allHostData.data?.text else { return }
+            let array = allHostString.replacingOccurrences(of: "\n", with: "").replacingOccurrences(of: " ", with: "").components(separatedBy: "<br>").filter({ !$0.isEmpty })
+            if let index = array.firstIndex(of: "比思永久域名") {
+                // 提取所有域名
+                let hosts = [self.host] + array.prefix(index).filter({ $0.hasPrefix("http")})
+                var hostDic = [String:Double]()
+                let maxCount = 5
+                let semaphore = DispatchSemaphore(value: maxCount * hosts.count)
+                for _ in 0..<maxCount {
+                    // 测试延时最短的域名
+                    for host in hosts {
+                        let url = host.urlAppendPathComponent(PFNetwork.API.Home.api)
+                        let star = Date().timeIntervalSince1970
+                        ATRequestManager.default.send(data: url, faildTimes: -1) { data in
+                            let time:Double
+                            if data.data?.text?.contains("比思論壇") == true {
+                                time = Date().timeIntervalSince1970 - star
+                            } else {
+                                time = 20
+                            }
+                            let totalTime = (hostDic[host] ?? 0) + time
+                            hostDic[host] = totalTime
+                            semaphore.signal()
+                        }
                     }
-                    let totalTime = (hostDic[host] ?? 0) + time
-                    hostDic[host] = totalTime
                 }
+                semaphore.wait()
+                // 取出多次测试，总延时最短的
+                let best = hostDic.min(by: { $0.1 < $1.1 })
+                self.host = best?.0 ?? self.host
             }
-            // 取出多次测试，总延时最短的
-            let best = hostDic.min(by: { $0.1 < $1.1 })
-            self.host = best?.0 ?? host
         }
-        */
     }
 }

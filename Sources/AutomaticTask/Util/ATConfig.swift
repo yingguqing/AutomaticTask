@@ -39,7 +39,12 @@ class ATConfig: SafeClass {
     
     func writeFile() {
         do {
-            let data = try JSONSerialization.data(withJSONObject: config, options: [.sortedKeys, .prettyPrinted])
+            let data:Data
+            if #available(macOS 10.13, *) {
+                data = try JSONSerialization.data(withJSONObject: config, options: [.sortedKeys, .prettyPrinted])
+            } else {
+                data = try JSONSerialization.data(withJSONObject: config, options: .prettyPrinted)
+            }
             try data.write(to: configPath.toFileURL)
         } catch {
             print("公用配置文件写入失败：\(error.localizedDescription)")
