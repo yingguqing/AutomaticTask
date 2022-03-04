@@ -97,7 +97,7 @@ struct ATResult {
     var cookies: [HTTPCookie]
     let error: ATError?
 
-    static let nilValue: ATResult = ATResult(data: nil, cookies: [], error: nil)
+    static let nilValue: ATResult = ATResult(data: nil, error: nil)
 
     init(data: Data?, cookies: [HTTPCookie] = [], error: ATError?) {
         self.data = data

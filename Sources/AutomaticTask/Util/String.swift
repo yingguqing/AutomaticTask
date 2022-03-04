@@ -133,20 +133,13 @@ extension String {
         }
     }
     
-    enum StringRandomOptions {
-        case Digits // 数字
-        case LowerCase // 小写字母
-        case UpperCase // 大写字母
+    enum StringRandomOptions:String {
+        case Digits = "1234567890" // 数字
+        case LowerCase = "abcdefghigklmnopqrstuvwxyz" // 小写字母
+        case UpperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" // 大写字母
         
         var list: [String] {
-            switch self {
-                case .Digits:
-                    return "1234567890".map { String($0) }
-                case .LowerCase:
-                    return "abcdefghigklmnopqrstuvwxyz".map { String($0) }
-                case .UpperCase:
-                    return "ABCDEFGHIJKLMNOPQRSTUVWXYZ".map { String($0) }
-            }
+            return self.rawValue.map { String($0) }
         }
     }
     

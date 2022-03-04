@@ -34,9 +34,9 @@ class ATNotice: ATBaseTask {
     ///   - title: 通知标题(可以为空)
     ///   - icon: 通知图标
     ///   - group: 消息分组
-    func sendNotice(text: String, title: String = "", icon: String = "", group: String = "", isFinish: Bool = true) {
+    func sendNotice(text: String, title: String = "", icon: String = "", group: String = "") {
         guard let noticeKey = noticeKey, !noticeKey.isEmpty, !text.isEmpty else {
-            finish(isFinish)
+            finish(true)
             return
         }
         var data = ATNoticeApiData(noticeKey: noticeKey, text: text)
@@ -57,7 +57,8 @@ class ATNotice: ATBaseTask {
                 }
                 print("发送通知失败：\(msg.joined(separator: " | "))")
             }
-            self.finish(isFinish)
+            self.notices.removeAll(where: { $0.title == title })
+            self.finish(self.notices.isEmpty)
         }
     }
     
@@ -95,6 +96,8 @@ class ATNotice: ATBaseTask {
 }
 
 extension ATNotice {
+    
+    /// 通知消息数据
     struct ATNoticeValue {
         var title:String = ""
         let groupName:String
@@ -107,6 +110,7 @@ extension ATNotice {
         }
     }
     
+    /// 通知网络数据
     struct ATNoticeApiData: NetworkData {
         var api: String? {
             let arr = [noticeKey, title.urlEncode, text.urlEncode].filter { !$0.isEmpty }
