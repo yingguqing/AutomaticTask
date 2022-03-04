@@ -43,7 +43,7 @@ class ATNotice: ATBaseTask {
         data.title = title
         data.icon = icon
         data.group = group
-        print(data.url?.absoluteString ?? "notice------------------------")
+        //print(data.url?.absoluteString ?? "notice------------------------")
         ATRequestManager.default.send(data: data) { result in
             let json = result.data?.json as? [String: Any]
             let code = json?["code"] as? Int
