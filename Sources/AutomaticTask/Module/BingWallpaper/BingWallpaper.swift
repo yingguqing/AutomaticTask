@@ -74,7 +74,7 @@ class BingWallpaper: ATBaseTask {
     /// 保存壁纸数据
     /// - Parameter image: 今天的壁纸
     func save(image: BWImage) {
-        let jsonURL = "bing-wallpaper.json".fullPath.toFileURL
+        let jsonURL = "bing-wallpaper.json".fullPath(fold: #file.deletingLastPathComponent).toFileURL
         do {
             let data = try Data(contentsOf: jsonURL)
             var imageJsonArrays = try JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed) as! [[String: Any]]
@@ -106,19 +106,10 @@ class BingWallpaper: ATBaseTask {
         lines.append("| :----: | :----: | :----: |")
         let count = images.count
         // 步长与数组元素个数刚好整数倍，否则多出的元素会舍去。结果：[[1,1,1],[2,2,2],[3,3,3] ... ]
-        var group = stride(from: 0, to: count, by: 3).map { Array(images[$0...$0+2]) }
-        if count % 3 != 0 {
-            group += [images.suffix(count % 3)]
-        }
-        lines += group.map({ "|\($0.map({ $0.toString }).joined(separator: "|"))|" })
-        let url = "README.md".fullPath.toFileURL
+        let group = stride(from: 0, to: count, by: 3).map { Array(images[$0...$0+2]) } + [images.suffix(count % 3)]
+        // 当元素个数刚好是3的倍数时，排除最后一个空的数组
+        lines += group.filter({ !$0.isEmpty }).map({ "|\($0.map({ $0.toString }).joined(separator: "|"))|" })
+        let url = "README.md".fullPath(fold: #file.deletingLastPathComponent).toFileURL
         try lines.joined(separator: "\n").write(to: url, atomically: true, encoding: .utf8)
-    }
-}
-
-private extension String {
-    var fullPath: String {
-        let base = #file.deletingLastPathComponent
-        return base.appending(pathComponent: self)
     }
 }
