@@ -268,6 +268,9 @@ extension PFNetwork {
         requestManager.send(data: param){ result in
             // "400 Bad Request"
             if let htmlString = result.data?.text {
+                if data.type == .Login {
+                    self.cookies.removeAll()
+                }
                 self.updateCookies(result.cookies)
                 returnData = PFResult(html: htmlString)
             } else {

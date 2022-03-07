@@ -1,8 +1,8 @@
 name: 编译检查
 
 on: 
-  [push]
-
+  #[push]
+  workflow_dispatch
 
 jobs:
   build:

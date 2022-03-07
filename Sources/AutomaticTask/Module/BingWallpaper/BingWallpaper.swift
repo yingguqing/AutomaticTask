@@ -104,19 +104,13 @@ class BingWallpaper: ATBaseTask {
         lines.append(today.toLarge)
         lines.append("|      |      |      |")
         lines.append("| :----: | :----: | :----: |")
-        var group = [BWImage]()
-        for image in images {
-            group.append(image)
-            if group.count == 3 {
-                let string = "|\(group.map { $0.toString }.joined(separator: "|"))|"
-                lines.append(string)
-                group = [BWImage]()
-            }
+        let count = images.count
+        // 步长与数组元素个数刚好整数倍，否则多出的元素会舍去。结果：[[1,1,1],[2,2,2],[3,3,3] ... ]
+        var group = stride(from: 0, to: count, by: 3).map { Array(images[$0...$0+2]) }
+        if count % 3 != 0 {
+            group += [images.suffix(count % 3)]
         }
-        if !group.isEmpty {
-            let string = "|\(group.map { $0.toString }.joined(separator: "|"))|"
-            lines.append(string)
-        }
+        lines += group.map({ "|\($0.map({ $0.toString }).joined(separator: "|"))|" })
         let url = "README.md".fullPath.toFileURL
         try lines.joined(separator: "\n").write(to: url, atomically: true, encoding: .utf8)
     }

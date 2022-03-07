@@ -165,8 +165,10 @@ class PicForum: ATBaseTask {
         
         // 提取formhash
         let formhashRegex = try! Regex("formhash=(\\w+)")
-        if let formhash = formhashRegex.firstGroup(in: data.html) {
-            self.formhash = formhash.trimmingCharacters(in: .whitespaces)
+        if let formhash = formhashRegex.firstGroup(in: data.html)?.trimmingCharacters(in: .whitespaces), !formhash.isEmpty {
+            self.formhash = formhash
+        } else {
+            log.print(text: "formhash获取失败", type: .Faild)
         }
         
         // 没有别人的空间地址时，提取首页随便一个人非自己的空间地址
@@ -180,18 +182,14 @@ class PicForum: ATBaseTask {
     }
     
     /// 登录
-    private func login() -> Bool {
-        formhash = ""
+    @discardableResult private func login() -> Bool {
         var param = defaultData
         param.body = ["username": user.name, "password": user.password]
         param.type = .Login
-        network.cookies.removeAll()
         let data = network.html(data: param)
         if !data.cdata.isEmpty {
             forum()
-            guard formhash.isEmpty else { return true }
-            log.print(text: "formhash获取失败", type: .Faild)
-            return false
+            return true
         } else {
             log.print(texts: ["登录失败", data.html], type: .Faild)
             return false
@@ -461,7 +459,7 @@ class PicForum: ATBaseTask {
     
     /// 删除记录
     private func deleteRecord() {
-        // login()
+        login()
         let ids = findAllRecord()
         guard !ids.isEmpty else { return }
         let referer = PFConfig.default.fullURL("home.php?mod=space&do=doing&view=me")
@@ -487,6 +485,7 @@ class PicForum: ATBaseTask {
     /// 发表日志
     private func journal() {
         guard user.canJournal else { return }
+        login()
         user.reloadMoney()
         let title = comments.randomElement()!
         let comment = comments.shuffled().suffix(10).joined(separator: "\n")
@@ -579,6 +578,7 @@ class PicForum: ATBaseTask {
     /// 发布一个分享
     private func share() {
         guard user.canShare else { return }
+        login()
         // 发表前的金币数
         user.reloadMoney()
         let referer = "home.php?mod=space&uid=\(user.userId)&do=share&view=me&quickforward=1"
