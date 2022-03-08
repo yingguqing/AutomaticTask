@@ -537,7 +537,7 @@ class PicForum: ATBaseTask {
     }
     
     /// 查询自己所有脚本发表的日志
-    private func allJournals(isShowLine: Bool) -> [String] {
+    private func allJournals() -> [String] {
         var param = defaultData
         param.apiValue = ["uid": "\(user.userId)"]
         param.type = .AllJournals
@@ -553,9 +553,10 @@ class PicForum: ATBaseTask {
     ///   - delTimes: 删除次数（达到5次时，不再删除）
     private func delJournal(allBlogIds: [String]? = nil, delTimes: Int = 0) {
         guard delTimes < 5 else { return }
-        var allIds = allBlogIds ?? allJournals(isShowLine: true)
+        var allIds = allBlogIds ?? allJournals()
         guard !allIds.isEmpty else { return }
         let id = allIds.removeFirst()
+        login()
         let referer = PFConfig.default.fullURL("home.php?mod=space&do=blog&view=me")
         var param = defaultData
         param.apiValue = ["blogid": id]
@@ -563,7 +564,7 @@ class PicForum: ATBaseTask {
         param.type = .DelJournal
         network.html(data: param)
         waitSleep(type: .Other)
-        let allBlogIds = allJournals(isShowLine: false)
+        let allBlogIds = allJournals()
         var times = delTimes
         if !allBlogIds.contains(id) {
             log.debugPrint(text: "日志删除成功:「\(id)」", type: .Success)
