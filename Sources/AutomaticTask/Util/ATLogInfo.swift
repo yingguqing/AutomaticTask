@@ -93,7 +93,7 @@ class ATPrintLog {
     // 标题
     let title: String
     // 是否是debug模式，debug模式会打印每条日志
-    let isDebug:Bool
+    var isDebug:Bool = false
     // 日志名称，设置了名称，就自动保存日志到文件
     let logFileName:String
     
