@@ -95,7 +95,7 @@ class PicForum: ATBaseTask {
     init(user: PFUser) {
         self.user = user
         self.log = ATPrintLog(title: user.name)
-        #if DEBUG
+        #if Xcode
         self.log.isDebug = true
         #endif
         super.init()
