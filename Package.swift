@@ -18,6 +18,7 @@ let package = Package(
                 .copy("config.json"),
                 .copy("Module/BingWallpaper/bing-wallpaper.json"),
                 .copy("Module/BingWallpaper/README.md")
+                .copy("Module/PicForum/README.md")
             ]),
         .testTarget(
             name: "AutomaticTaskTests",
