@@ -123,7 +123,6 @@ extension ATNotice {
             return api
         }
         
-        var method: HttpMethod = .POST
         let host: String = "https://api.day.app"
         let noticeKey: String
         var text: String // 通知内容
