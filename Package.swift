@@ -17,7 +17,7 @@ let package = Package(
             resources:[
                 .copy("config.json"),
                 .copy("Module/BingWallpaper/bing-wallpaper.json"),
-                .copy("Module/BingWallpaper/README.md")
+                .copy("Module/BingWallpaper/README.md"),
                 .copy("Module/PicForum/README.md")
             ]),
         .testTarget(
