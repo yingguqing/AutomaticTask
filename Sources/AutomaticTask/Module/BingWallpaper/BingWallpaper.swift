@@ -106,7 +106,7 @@ class BingWallpaper: ATBaseTask {
         lines.append("| :----: | :----: | :----: |")
         let count = images.count
         // 步长与数组元素个数刚好整数倍，否则多出的元素会舍去。结果：[[1,1,1],[2,2,2],[3,3,3] ... ]
-        let group = stride(from: 0, to: count, by: 3).map { Array(images[$0...$0+2]) } + [images.suffix(count % 3)]
+        let group = stride(from: 0, to: count - (count % 3), by: 3).map { Array(images[$0...$0+2]) } + [images.suffix(count % 3)]
         // 当元素个数刚好是3的倍数时，排除最后一个空的数组
         lines += group.filter({ !$0.isEmpty }).map({ "|\($0.map({ $0.toString }).joined(separator: "|"))|" })
         let url = "README.md".fullPath(fold: #file.deletingLastPathComponent).toFileURL
