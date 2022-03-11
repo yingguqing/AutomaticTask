@@ -284,6 +284,8 @@ class PicForum: ATBaseTask {
             log.print(text: "评论超过每小時限制数", type: .Warn)
             user.maxReplyTimes = user.replyTimes
             return true
+        } else if data.findSuccess(txt: "主題自動關閉，不再接受新回復") {
+            return false
         } else {
             log.print(texts: ["发表评论失败"] + data.errorData, type: .Faild)
             user.maxReplyFailTimes -= 1
