@@ -202,6 +202,8 @@ class PicForum: ATBaseTask {
     /// 签到
     private func signIn() {
         guard isSignIn else { return }
+        // 签到前的金币数
+        user.reloadMoney()
         var param = defaultData
         param.body = ["formhash": formhash]
         param.type = .SignIn
@@ -210,7 +212,13 @@ class PicForum: ATBaseTask {
         if let text = regex.firstGroup(in: data.html) {
             log.print(text: text, type: .Success)
         } else {
-            log.print(texts: ["签到失败", data.html], type: .Faild)
+            let plus = user.moneyPlus()
+            if plus > 0 {
+                // 网络数据没有返回，但是签到后金币增加了，表示签到成功
+                log.print(text: "恭喜你簽到成功!獲得隨機獎勵 金錢 \(plus)", type: .Success)
+            } else {
+                log.print(texts: ["签到失败", data.html], type: .Faild)
+            }
         }
     }
     
@@ -273,7 +281,7 @@ class PicForum: ATBaseTask {
         if data.findSuccess(txt: "非常感謝，回復發佈成功") {
             user.replyTimes += 1
             log.debugPrint(text: "第\(user.replyTimes)条：「\(comment)」-> 發佈成功", type: .Success)
-            if !user.reloadMoney() {
+            if user.moneyPlus() == 0 {
                 // 如果发表评论后，金币数不增加，就不再发表评论
                 log.print(text: "评论：\(user.replyTimes)，达到每日上限。不再发表评论。", type: .Warn)
                 user.replyTimes += 1000
@@ -522,7 +530,7 @@ class PicForum: ATBaseTask {
             user.journalTimes += 1
             user.save()
             log.debugPrint(text: "第\(user.journalTimes)篇日志：「\(title)」-> 發佈成功", type: .Success)
-            if !user.reloadMoney() {
+            if user.moneyPlus() == 0 {
                 // 如果发表后，金币数不增加，就不再发表
                 log.print(text: "日志:\(user.journalTimes)，达到每日上限。", type: .Warn)
                 user.journalTimes += 1000
@@ -597,7 +605,7 @@ class PicForum: ATBaseTask {
         if data.findSuccess() {
             user.shareTimes += 1
             user.save()
-            if !user.reloadMoney() {
+            if user.moneyPlus() == 0 {
                 // 如果发表后，金币数不增加，就不再发表
                 log.print(text: "发表分享达到每日上限。", type: .Warn)
                 user.shareTimes = 9999

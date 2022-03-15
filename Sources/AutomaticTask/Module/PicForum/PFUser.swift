@@ -91,16 +91,21 @@ class PFUser {
     
     /// 重新获取金币数
     /// - Returns: 金币是否增加
-    @discardableResult func reloadMoney() -> Bool {
+    func reloadMoney() {
+        _ = moneyPlus()
+    }
+    
+    /// 金币增加数
+    func moneyPlus() -> Int {
         for _ in [0...5] {
             let tempMoney = PFNetwork.userMoney(id: userId)
             if tempMoney > -1 {
-                let isMore = money < tempMoney
+                let number = tempMoney - money
                 money = tempMoney
-                return isMore
+                return number
             }
         }
-        return false
+        return -1
     }
 }
 
