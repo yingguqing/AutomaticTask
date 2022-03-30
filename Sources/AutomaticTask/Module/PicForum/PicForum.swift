@@ -218,6 +218,8 @@ class PicForum: ATBaseTask {
                 log.print(text: "恭喜你簽到成功!獲得隨機獎勵 金錢 \(plus)", type: .Success)
             } else {
                 log.print(texts: ["签到失败", data.html], type: .Faild)
+                // 直接再签一到次，不管结果
+                _ = network.html(data: param)
             }
         }
     }
