@@ -42,6 +42,10 @@ struct Repeat: ParsableCommand {
             ATNotice.default.targetCounts += pics.count
         }
         
+        // 音乐磁场签到
+        let hifini = HiFiNi()
+        hifini.run()
+        
         // 有通知需求时，把通知加到任务列表中
         if ATNotice.default.isValid {
             taskArray.append(ATNotice.default)
