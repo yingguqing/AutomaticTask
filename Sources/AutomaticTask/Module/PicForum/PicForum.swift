@@ -92,12 +92,10 @@ class PicForum: ATBaseTask {
         return net
     }()
     
-    init(user: PFUser) {
+    init(user: PFUser, isDebug:Bool=false) {
         self.user = user
         self.log = ATPrintLog(title: user.name)
-        #if Xcode
-        self.log.isDebug = true
-        #endif
+        self.log.isDebug = isDebug
         super.init()
         super.timeout = 3000
     }

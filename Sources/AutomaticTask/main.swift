@@ -17,8 +17,15 @@ struct Repeat: ParsableCommand {
     @Flag(help: "抓取必应壁纸")
     var bingWallpaper = false
     
+    @Option(help: "音乐磁场签到")
+    var hifini:String?
+    
+    @Option(help: "debug模式")
+    var debug:String?
+    
     func run() {
         print("当前北京时间：\(Date.nowString())")
+        let isDebug = debug == "1"
         let star = Date().timeIntervalSince1970
         var taskArray = SafeArray<AutomaticTask>()
         
@@ -30,6 +37,13 @@ struct Repeat: ParsableCommand {
             }
             taskArray.append(bw)
         }
+        
+        if let data = hifini?.data(using: .utf8), let json = data.json as? [String: String] {
+            // 音乐磁场签到
+            let hifini = HiFiNi(json: json)
+            hifini.run(isDebug: isDebug)
+            taskArray.append(hifini)
+        }
 
         // 手机通知
         ATNotice.default.noticeKey = notice
@@ -37,14 +51,10 @@ struct Repeat: ParsableCommand {
         // 比思签到
         if let data = picForum?.data(using: .utf8), let json = data.json as? [String: Any] {
             PFConfig.default.update(json: json)
-            let pics = PFConfig.default.run()
+            let pics = PFConfig.default.run(isDebug: isDebug)
             taskArray += pics
             ATNotice.default.targetCounts += pics.count
         }
-        
-        // 音乐磁场签到
-        let hifini = HiFiNi()
-        hifini.run()
         
         // 有通知需求时，把通知加到任务列表中
         if ATNotice.default.isValid {
