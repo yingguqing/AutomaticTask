@@ -129,5 +129,6 @@ extension ATNotice {
         var title: String = "" // 通知标题
         var icon: String = "" // 通知图标
         var group: String = "" // 消息分组
+        var method: HttpMethod = .POST
     }
 }

@@ -14,26 +14,16 @@ class HiFiNi: ATBaseTask, NetworkData {
     let sid: String
     let token:String
     let uid:String
-    // 签到的所有日期时间戳
-    var lvt:[String] = []
+    var method: HttpMethod = .POST
     lazy var headerFields: [String : String?]? = [
-        "authority" : "www.hifini.com",
-        "sec-ch-ua": " Not A;Brand\";v=\"99\", \"Chromium\";v=\"99\", \"Google Chrome\";v=\"99\"",
-        "accept": "text/plain, */*; q=0.01",
-        "dnt": "1",
-        "sec-ch-ua-mobile":"?0",
-        "user-agen":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.83 Safari/537.36",
-        "sec-ch-ua-platform": "macOS",
-        "origin": "https://www.hifini.com",
-        "referer": "https://www.hifini.com/"
+        "X-Requested-With" : "XMLHttpRequest"
     ]
     
     var cookieString: String? {
         let ts = String(Int(Date().timeIntervalSince1970))
-        self.lvt.append(ts)
         let cookies = [
             "bbs_sid":sid,
-            "Hm_lvt_\(uid)": self.lvt.joined(separator: ","),
+            "Hm_lvt_\(uid)": ts,
             "bbs_token": token,
             "Hm_lpvt_\(uid)": ts
         ]
@@ -44,17 +34,20 @@ class HiFiNi: ATBaseTask, NetworkData {
         self.sid = json.value(key: "sid", defaultValue: "")
         self.token = json.value(key: "token", defaultValue: "")
         self.uid = json.value(key: "uid", defaultValue: "")
-        self.lvt = ATConfig.default.read(key: "HiFiNi") as? [String] ?? []
     }
     
     func run(isDebug:Bool) {
         let log = ATPrintLog(title: "音乐磁场")
         log.isDebug = isDebug
         ATRequestManager.default.send(data: self) { result in
-            if isDebug {
-                log.print(text: result.data?.text ?? "数据错误", type: .Success)
+            let msg:String
+            if let json = result.data?.json as? [String:String] {
+                msg = json["message"] ?? result.data?.text ?? "数据错误"
+            } else {
+                msg = result.data?.text ?? "网络错误"
             }
-            ATConfig.default.save(key: "HiFiNi", value: self.lvt)
+            log.print(text: msg, type: .Success)
+            log.printLog()
             self.finish()
         }
     }
