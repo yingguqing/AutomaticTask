@@ -7,7 +7,7 @@
 
 import Foundation
 
-// 音乐磁场签到
+// 音乐磁场签到 有ip限制，github的action被限制
 class HiFiNi: ATBaseTask, NetworkData {
     var host: String = "https://www.hifini.com/sg_sign.htm"
     var api: String? = nil

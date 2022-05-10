@@ -30,7 +30,7 @@ jobs:
     - name: Build
       run: swift build
     - name: Run
-      run: swift run AutomaticTask --bing-wallpaper --notice ${{ secrets.NOTICE }} --pic-forum ${{ secrets.PIC  }} --hifini ${{ secrets.HIFINI }} --debug ${{ secrets.DEBUG }}
+      run: swift run AutomaticTask --bing-wallpaper --notice ${{ secrets.NOTICE }} --pic-forum ${{ secrets.PIC  }} --debug ${{ secrets.DEBUG }}
 
     - name: Commit files
       run: |
