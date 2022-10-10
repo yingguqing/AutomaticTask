@@ -1,13 +1,13 @@
 name: 编译检查
 
 on: 
-  [push]
-  #workflow_dispatch
+  #[push]
+  workflow_dispatch
 
 jobs:
   build:
 
-    runs-on: ubuntu-latest #ubuntu-latest macos-latest
+    runs-on: macos-latest #ubuntu-latest macos-latest
 
     steps:
     # 指定分支
