@@ -101,37 +101,41 @@ class PicForum: ATBaseTask {
     }
     
     func run() {
-        defer { finish() }
-        log.print(text: "------------- \(user.name) 比思签到 -------------", type: .Normal)
-        if user.historyMoney < 0 {
-            log.print(text: "获取历史金钱失败", type: .Faild)
+        Task {
+            defer { finish() }
+            log.print(text: "------------- \(user.name) 比思签到 -------------", type: .Normal)
+            // 获取用户当前金币数
+            await user.reloadMoney()
+            if user.historyMoney < 0 {
+                log.print(text: "获取历史金钱失败", type: .Faild)
+            }
+            // 登录
+            guard await login() else { return }
+            // 签到
+            await signIn()
+            // 评论
+            await forumList(true)
+            // 访问别人空间并留言
+            await visitUserZone()
+            // 留言
+            await leavMessage()
+            // 发表一条记录
+            await record()
+            // 删除发表的记录
+            await deleteRecord()
+            // 发表日志
+            await journal()
+            // 删除脚本发表的日志
+            await delJournal()
+            // 发表分享
+            await share()
+            // 删除自己空间留言所产生的动态
+            await deleteAllleavMessageDynamic()
+            await user.reloadMoney()
+            user.save()
+            log.print(text: "金钱：\(user.moneyAddition(1))", type: .Cyan)
+            log.print(text: "休息：\(Double(sleepTime).timeFromat)", type: .White)
         }
-        // 登录
-        guard login() else { return }
-        // 签到
-        signIn()
-        // 评论
-        forumList(true)
-        // 访问别人空间并留言
-        visitUserZone()
-        // 留言
-        leavMessage()
-        // 发表一条记录
-        record()
-        // 删除发表的记录
-        deleteRecord()
-        // 发表日志
-        journal()
-        // 删除脚本发表的日志
-        delJournal()
-        // 发表分享
-        share()
-        // 删除自己空间留言所产生的动态
-        deleteAllleavMessageDynamic()
-        user.reloadMoney()
-        user.save()
-        log.print(text: "金钱：\(user.moneyAddition(1))", type: .Cyan)
-        log.print(text: "休息：\(Double(sleepTime).timeFromat)", type: .White)
     }
     
     /// 比思结束
@@ -154,8 +158,8 @@ class PicForum: ATBaseTask {
     ///   - host: 域名
     ///   - isCheckHost: 是否测试域名
     ///   - complete: 完成回调
-    private func forum(host: String? = nil, isCheckHost: Bool = false) {
-        let data = network.html(data: defaultData)
+    private func forum(host: String? = nil, isCheckHost: Bool = false) async {
+        let data = await network.html(data: defaultData)
         // 提取自己的用户id
         let regex = try! Regex("<a\\s*href=\"space-uid-(\\d{5,}).html\"\\s*target=\"_blank\"\\s*title=\"訪問我的空間\">\(user.name)</a>")
         if let userId = regex.firstGroup(in: data.html), let id = Int(userId) {
@@ -183,13 +187,13 @@ class PicForum: ATBaseTask {
     }
     
     /// 登录
-    @discardableResult private func login() -> Bool {
+    @discardableResult private func login() async -> Bool {
         var param = defaultData
         param.body = ["username": user.name, "password": user.password]
         param.type = .Login
-        let data = network.html(data: param)
+        let data = await network.html(data: param)
         if !data.cdata.isEmpty {
-            forum()
+            await forum()
             return true
         } else {
             log.print(texts: ["登录失败", data.html], type: .Faild)
@@ -198,33 +202,33 @@ class PicForum: ATBaseTask {
     }
     
     /// 签到
-    private func signIn() {
+    private func signIn() async {
         guard isSignIn else { return }
         // 签到前的金币数
-        user.reloadMoney()
+        await user.reloadMoney()
         var param = defaultData
         param.body = ["formhash": formhash]
         param.type = .SignIn
-        let data = network.html(data: param)
+        let data = await network.html(data: param)
         let regex = try! Regex("<div\\s+class\\s*=\\s*\"c\"\\s*>\\W*(.*?)\\W*<\\s*/\\s*div\\s*>")
         if let text = regex.firstGroup(in: data.html) {
             log.print(text: text, type: .Success)
         } else {
-            let plus = user.moneyPlus()
+            let plus = await user.moneyPlus()
             if plus > 0 {
                 // 网络数据没有返回，但是签到后金币增加了，表示签到成功
                 log.print(text: "[恭喜你簽到成功!獲得隨機獎勵 金錢 \(plus)]", type: .Success)
             } else {
                 log.print(texts: ["签到失败", data.html], type: .Faild)
                 // 直接再签一到次，不管结果
-                _ = network.html(data: param)
+                await network.html(data: param)
             }
         }
     }
     
     /// 版本帖子列表
     /// - Parameter isFirst: 是否是第一次获取，如果是的话会打印日志，并获取一下现有金币
-    private func forumList(_ isFirst: Bool = false) {
+    private func forumList(_ isFirst: Bool = false) async {
         guard user.canReply, !fids.isEmpty else { return }
         // 版块id
         let fid = fids.removeFirst()
@@ -234,7 +238,7 @@ class PicForum: ATBaseTask {
         param.apiValue = ["fid": String(fid), "page": String(page)]
         param.type = .ForumList
         // 版本排序：最后发贴，防止 180 天以前的主題自動關閉，不再接受新回復
-        let data = network.html(data: param)
+        let data = await network.html(data: param)
         if isFirst {
             let regex = try! Regex("<a\\s*href=\"forum-\(fid)-1.html\">(.*?)</a>")
             if let first = regex.firstGroup(in: data.html) {
@@ -248,7 +252,7 @@ class PicForum: ATBaseTask {
         var forumReplyTime = 0
         for item in items {
             let comment = comments.randomElement()!
-            if reply(comment: comment, fid: fid, tid: item.0, name: item.1) {
+            if await reply(comment: comment, fid: fid, tid: item.0, name: item.1) {
                 forumReplyTime += 1
             }
             if forumReplyTime >= 3 || !user.canReply {
@@ -256,7 +260,7 @@ class PicForum: ATBaseTask {
             }
         }
         // 评论数不够15条时，获取另一批帖子
-        forumList()
+        await forumList()
     }
     
     /// 发表评论
@@ -266,22 +270,22 @@ class PicForum: ATBaseTask {
     ///   - tid: 帖子id
     ///   - name: 帖子名称
     /// - Returns: 是否成功发表
-    private func reply(comment: String, fid: Int, tid: String, name: String) -> Bool {
+    private func reply(comment: String, fid: Int, tid: String, name: String) async -> Bool {
         let _url = PFConfig.default.fullURL("thread-\(tid)-1-1.html")
         log.debugPrint(text: "进入帖子->\(name)：\(_url)", type: .Info)
         // 发表评论前的金币数
-        user.reloadMoney()
+        await user.reloadMoney()
         var param = defaultData
         param.apiValue = ["fid": "\(fid)", "tid": tid]
         param.body = ["message": comment, "formhash": formhash, "posttime": "\(Int(Date().timeIntervalSince1970))"]
         param.type = .Reply
-        let data = network.html(data: param)
+        let data = await network.html(data: param)
         // 评论有时间间隔限制
         defer { waitSleep(type: .Reply) }
         if data.findSuccess(txt: "非常感謝，回復發佈成功") {
             user.replyTimes += 1
             log.debugPrint(text: "第\(user.replyTimes)条：「\(comment)」-> 發佈成功", type: .Success)
-            if user.moneyPlus() == 0 {
+            if await user.moneyPlus() == 0 {
                 // 如果发表评论后，金币数不增加，就不再发表评论
                 log.print(text: "评论：\(user.replyTimes)，达到每日上限。不再发表评论。", type: .Warn)
                 user.replyTimes += 1000
@@ -311,13 +315,13 @@ class PicForum: ATBaseTask {
     }
     
     /// 访问别人空间
-    private func visitUserZone() {
+    private func visitUserZone() async {
         guard user.isVisitOtherZone else { return }
         if user.otherUserId > 999 {
             var param = defaultData
             param.apiValue = ["uid": "\(user.otherUserId)"]
             param.type = .Zone
-            network.html(data: param, title: "访问别人空间")
+            await network.html(data: param, title: "访问别人空间")
             user.isVisitOtherZone = false
             user.save()
         } else {
@@ -326,13 +330,13 @@ class PicForum: ATBaseTask {
     }
     
     /// 留言
-    private func leavMessage() {
+    private func leavMessage() async {
         guard user.canLeaveMessage, user.otherUserId > 999 else { return }
         let refer = "home.php?mod=space&uid=\(user.otherUserId)"
         var param = defaultData
         param.body = ["refer": refer, "formhash": formhash, "id": "\(user.otherUserId)", "handlekey": "commentwall_\(user.otherUserId)", "message": "留个言，赚个金币。"]
         param.type = .LeavMessage
-        let data = network.html(data: param)
+        let data = await network.html(data: param)
         waitSleep(type: .LeaveMessage)
         if data.findSuccess() {
             log.debugPrint(text: "留言成功", type: .Success)
@@ -340,7 +344,7 @@ class PicForum: ATBaseTask {
             user.save()
             let regex = try! Regex("\\{\\s*\\'cid\\'\\s*:\\s*\\'(\\d+)\\'\\s*\\}")
             if let id = regex.firstGroup(in: data.html) {
-                deleteMessage(cId: id)
+                await deleteMessage(cId: id)
             }
         } else {
             log.print(texts: data.errorData, type: .Faild)
@@ -355,7 +359,7 @@ class PicForum: ATBaseTask {
             log.print(text: "留言失败", type: .Faild)
             user.maxLeaveMsgFailTimes -= 1
             if user.canLeaveMessage {
-                leavMessage()
+                await leavMessage()
             } else {
                 log.print(text: "发表留言失败,超过最大失败次数", type: .Faild)
             }
@@ -364,20 +368,20 @@ class PicForum: ATBaseTask {
     
     /// 删除留言
     /// - Parameter cId: 留言id
-    private func deleteMessage(cId: String) {
+    private func deleteMessage(cId: String) async {
         let refer = PFNetwork.PFNetworkData(api: ["uid": "\(user.otherUserId)"], .Zone).url?.absoluteString ?? ""
         defaultData.header["Referer"] = refer
         var frontParam = defaultData
         frontParam.apiValue = ["cid": cId, "handlekey": "c_\(cId)_delete", "ajaxtarget": "fwin_content_c_\(cId)_delete"]
         frontParam.type = .DeleteMessageFront
         // 获取删除留言相关参数
-        network.html(data: frontParam)
+        await network.html(data: frontParam)
         // 请求删除留言
         var param = defaultData
         param.apiValue = ["cid": cId]
         param.body = ["handlekey": "c_\(cId)_delete", "formhash": formhash, "referer": refer]
         param.type = .DeleteMessage
-        let data = network.html(data: param)
+        let data = await network.html(data: param)
         if data.findSuccess() {
             log.debugPrint(text: "删除留言成功", type: .Success)
             waitSleep(type: .Other)
@@ -388,19 +392,19 @@ class PicForum: ATBaseTask {
     }
     
     /// 自己空间留言所产生的动态列表
-    private func deleteAllleavMessageDynamic() {
+    private func deleteAllleavMessageDynamic() async {
         guard user.userId > 999 else { return }
         var param = defaultData
         param.apiValue = ["uid": "\(user.userId)"]
         param.type = .LeavMessageDynamicList
-        let data = network.html(data: param)
+        let data = await network.html(data: param)
         let regex = try! Regex("\"home.php\\?mod=spacecp&amp;ac=feed&amp;op=menu&amp;feedid=(\\d+)\"")
         let feedids = regex.matches(in: data.html).map { $0.captures.compactMap { $0 } }.flatMap { $0 }
         guard !feedids.isEmpty else { return }
         log.debugPrint(text: "\(feedids.count)条动态", type: .Success)
         let url = param.url?.absoluteString ?? ""
-        feedids.forEach {
-            deleteLeavMessageDynamic(feedid: $0, referer: url)
+        for id in feedids {
+            await deleteLeavMessageDynamic(feedid: id, referer: url)
         }
     }
     
@@ -408,21 +412,21 @@ class PicForum: ATBaseTask {
     /// - Parameters:
     ///   - feedid: 动态的id
     ///   - referer: 来源地址
-    private func deleteLeavMessageDynamic(feedid: String, referer: String) {
+    private func deleteLeavMessageDynamic(feedid: String, referer: String) async {
         guard !feedid.isEmpty, !referer.isEmpty else { return }
         defaultData.header["Referer"] = referer
         var frontParam = defaultData
         frontParam.apiValue = ["feedid": feedid, "handlekey": "a_feed_menu_\(feedid)", "ajaxtarget": "fwin_content_a_feed_menu_\(feedid)"]
         frontParam.type = .DeleteLeavMessageDynamicFront
         // 获取删除动态相关参数
-        network.html(data: frontParam)
+        await network.html(data: frontParam)
         
         // 删除动态
         var param = defaultData
         param.apiValue = ["feedid": feedid, "handlekey": "a_feed_menu_\(feedid)"]
         param.body = ["referer": referer, "formhash": formhash]
         param.type = .DeleteLeavMessageDynamic
-        let data = network.html(data: param)
+        let data = await network.html(data: param)
         if data.findSuccess() {
             log.debugPrint(text: "一条动态删除成功", type: .Success)
         } else {
@@ -432,7 +436,7 @@ class PicForum: ATBaseTask {
     }
     
     /// 发表一条记录
-    private func record() {
+    private func record() async {
         guard user.canRecord, user.userId > 9999 else { return }
         let referer = "home.php?mod=space&uid=\(user.userId)&do=doing&view=me&from=space"
         let message = comments.randomElement()!
@@ -440,7 +444,7 @@ class PicForum: ATBaseTask {
         param.header["Referer"] = PFConfig.default.fullURL(referer)
         param.body = ["message": message, "formhash": formhash, "referer": referer]
         param.type = .Record
-        let data = network.html(data: param)
+        let data = await network.html(data: param)
         waitSleep(type: .Record)
         if data.findSuccess(txt: message) {
             log.debugPrint(text: "记录：「\(message)」-> 发表成功", type: .Success)
@@ -450,7 +454,7 @@ class PicForum: ATBaseTask {
             log.print(text: "发表记录失败", type: .Faild)
             user.maxRecordFailTimes -= 1
             if user.canRecord {
-                record()
+                await record()
             } else {
                 log.print(text: "发表记录失败，超过最大失败次数", type: .Faild)
             }
@@ -458,12 +462,12 @@ class PicForum: ATBaseTask {
     }
     
     /// 查询所有记录id
-    private func findAllRecord() -> [String] {
+    private func findAllRecord() async -> [String] {
         guard user.userId > 9999 else { return [] }
         var param = defaultData
         param.apiValue = ["uid": "\(user.userId)"]
         param.type = .FindAllRecord
-        let html = network.html(data: param).html
+        let html = await network.html(data: param).html
         // group1: 标题，group2：id。筛选条件：标题是预设的评论内容
         let regex = try! Regex("<span>\\s*(.*?)\\s*</span>\\s*</dd>\\s*<dd\\s+class\\s*=\\s*\".*?\"\\s+id=\"(.*?)\"\\s+style\\s*=\\s*\"display:none;\"\\s*>", options: [.ignoreCase])
         let ids = regex.matches(in: html).map { $0.captures.compactMap { $0 } }.filter { $0.count == 2 && comments.contains($0[0]) }.map { $0[1] }
@@ -471,9 +475,9 @@ class PicForum: ATBaseTask {
     }
     
     /// 删除记录
-    private func deleteRecord() {
-        login()
-        let ids = findAllRecord()
+    private func deleteRecord() async {
+        await login()
+        let ids = await findAllRecord()
         guard !ids.isEmpty else { return }
         let referer = PFConfig.default.fullURL("home.php?mod=space&do=doing&view=me")
         for id in ids {
@@ -485,21 +489,21 @@ class PicForum: ATBaseTask {
             var frontParam = defaultData
             frontParam.apiValue = ["doid": doid, "handlekey": handlekey, "ajaxtarget": "fwin_content_\(star)_doing_delete_\(doid)_"]
             frontParam.type = .DeleteRecordFront
-            network.html(data: frontParam)
+            await network.html(data: frontParam)
             
             var param = defaultData
             param.apiValue = ["doid": doid]
             param.body = ["handlekey": handlekey, "formhash": formhash, "referer": referer]
             param.type = .DeleteRecord
-            network.html(data: param)
+            await network.html(data: param)
         }
     }
     
     /// 发表日志
-    private func journal() {
+    private func journal() async {
         guard user.canJournal else { return }
-        login()
-        user.reloadMoney()
+        await login()
+        await user.reloadMoney()
         let title = comments.randomElement()!
         let comment = comments.shuffled().suffix(10).joined(separator: "\n")
         let referer = PFConfig.default.fullURL("home.php?mod=space&uid=\(user.userId)&do=blog&view=me")
@@ -524,13 +528,13 @@ class PicForum: ATBaseTask {
             "blogsubmit": "true"
         ]
         param.type = .Journal
-        let data = network.html(data: param)
+        let data = await network.html(data: param)
         waitSleep(type: .Journal)
         if data.findSuccess(txt: title) {
             user.journalTimes += 1
             user.save()
             log.debugPrint(text: "第\(user.journalTimes)篇日志：「\(title)」-> 發佈成功", type: .Success)
-            if user.moneyPlus() == 0 {
+            if await user.moneyPlus() == 0 {
                 // 如果发表后，金币数不增加，就不再发表
                 log.print(text: "日志:\(user.journalTimes)，达到每日上限。", type: .Warn)
                 user.journalTimes += 1000
@@ -543,18 +547,18 @@ class PicForum: ATBaseTask {
         
         // 发表有时间间隔限制
         if user.canJournal {
-            journal()
+            await journal()
         } else if user.maxJournalFailTimes <= 0 {
             log.print(text: "发表日志失败，超过最大失败次数。", type: .Faild)
         }
     }
     
     /// 查询自己所有脚本发表的日志
-    private func allJournals() -> [String] {
+    private func allJournals() async -> [String] {
         var param = defaultData
         param.apiValue = ["uid": "\(user.userId)"]
         param.type = .AllJournals
-        let html = network.html(data: param).html
+        let html = await network.html(data: param).html
         let regex = try! Regex("<a\\s+href\\s*=\\s*\"blog-(\\d+)-(\\d+).html\"\\s+target\\s*=\\s*\"_blank\"\\s*>\\s*(.*?)\\s*</a>")
         let allBlogids = regex.matches(in: html).map { $0.captures.compactMap { $0 } }.filter { $0.count == 3 && $0[2].hasPrefix("我的日志") }.map { $0[1] }
         return allBlogids
@@ -564,20 +568,25 @@ class PicForum: ATBaseTask {
     /// - Parameters:
     ///   - allBlogIds: 所有的日志id，为空自动获取
     ///   - delTimes: 删除次数（达到5次时，不再删除）
-    private func delJournal(allBlogIds: [String]? = nil, delTimes: Int = 0) {
+    private func delJournal(allBlogIds: [String]? = nil, delTimes: Int = 0) async {
         guard delTimes < 5 else { return }
-        var allIds = allBlogIds ?? allJournals()
+        var allIds:[String]
+        if let allBlogIds = allBlogIds {
+            allIds = allBlogIds
+        } else {
+            allIds = await allJournals()
+        }
         guard !allIds.isEmpty else { return }
         let id = allIds.removeFirst()
-        login()
+        await login()
         let referer = PFConfig.default.fullURL("home.php?mod=space&do=blog&view=me")
         var param = defaultData
         param.apiValue = ["blogid": id]
         param.body = ["formhash": formhash, "referer": referer]
         param.type = .DelJournal
-        network.html(data: param)
+        await network.html(data: param)
         waitSleep(type: .Other)
-        let allBlogIds = allJournals()
+        let allBlogIds = await allJournals()
         var times = delTimes
         if !allBlogIds.contains(id) {
             log.debugPrint(text: "日志删除成功:「\(id)」", type: .Success)
@@ -586,26 +595,26 @@ class PicForum: ATBaseTask {
             log.print(text: "日志删除失败:「\(id)」", type: .Faild)
         }
         guard !allBlogIds.isEmpty else { return }
-        delJournal(allBlogIds: allBlogIds, delTimes: times)
+        await delJournal(allBlogIds: allBlogIds, delTimes: times)
     }
     
     /// 发布一个分享
-    private func share() {
+    private func share() async {
         guard user.canShare else { return }
-        login()
+        await login()
         // 发表前的金币数
-        user.reloadMoney()
+        await user.reloadMoney()
         let referer = "home.php?mod=space&uid=\(user.userId)&do=share&view=me&quickforward=1"
         var param = defaultData
         param.header["Referer"] = PFConfig.default.fullURL(referer)
         param.body = ["formhash": formhash, "referer": referer, "link": "https://www.baidu.com", "general": comments.randomElement()!]
         param.type = .Share
-        let data = network.html(data: param)
+        let data = await network.html(data: param)
         waitSleep(type: .Share)
         if data.findSuccess() {
             user.shareTimes += 1
             user.save()
-            if user.moneyPlus() == 0 {
+            if await user.moneyPlus() == 0 {
                 // 如果发表后，金币数不增加，就不再发表
                 log.print(text: "发表分享达到每日上限。", type: .Warn)
                 user.shareTimes = 9999
@@ -616,7 +625,7 @@ class PicForum: ATBaseTask {
             // 删除刚发表的分享
             let regex = try! Regex("\\{\\s*\\'sid\\'\\s*:\\s*\\'(\\d+)\\'\\s*\\}", options: [.dotMatchesLineSeparators])
             if let sid = regex.firstGroup(in: data.html) {
-                delShare(sid: sid)
+                await delShare(sid: sid)
             }
         } else {
             log.print(texts: ["发布分享失败"] + data.errorData, type: .Faild)
@@ -628,7 +637,7 @@ class PicForum: ATBaseTask {
         }
         
         if user.canShare {
-            share()
+            await share()
         } else if user.maxShareFailTimes <= 0 {
             log.print(text: "发布分享失败，超过最大失败次数。", type: .Faild)
         }
@@ -636,14 +645,14 @@ class PicForum: ATBaseTask {
     
     /// 删除一条分享
     /// - Parameter sid: 分享的id
-    private func delShare(sid: String) {
+    private func delShare(sid: String) async {
         guard !sid.isEmpty else { return }
         let referer = PFConfig.default.fullURL("home.php?mod=space&do=share&view=me")
         var param = defaultData
         param.apiValue = ["sid": sid]
         param.body = ["formhash": formhash, "referer": referer, "handlekey": "s_\(sid)_delete"]
         param.type = .DeleteShare
-        let data = network.html(data: param)
+        let data = await network.html(data: param)
         if data.findSuccess() {
             log.debugPrint(text: "删除分享成功", type: .Success)
         } else {

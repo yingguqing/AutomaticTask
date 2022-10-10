@@ -261,37 +261,32 @@ extension PFNetwork {
     ///   - data: 相应地址
     ///   - title: 标题
     ///   - isCleanCookie: 是否清除所有cookie
-    @discardableResult func html(data: PFNetworkData, title: String = "") -> PFResult {
+    @discardableResult func html(data: PFNetworkData, title: String = "") async -> PFResult {
         // 更新cookies
         let param = data.updateCookies(cookies)
-        var returnData:PFResult? = nil
-        requestManager.send(data: param){ result in
-            // "400 Bad Request"
-            if let htmlString = result.data?.text {
-                if data.type == .Login {
-                    self.cookies.removeAll()
-                }
-                self.updateCookies(result.cookies)
-                returnData = PFResult(html: htmlString)
-            } else {
-                let msg = "\(title.isEmpty ? data.type.rawValue : title)失败：\(result.error?.localizedDescription ?? data.url?.absoluteString ?? "")"
-                self.log?.print(text: msg, type: .Faild)
-                returnData = PFResult(error: result.error)
+        let result = await requestManager.send(data: param)
+        // "400 Bad Request"
+        if let htmlString = result.data?.text {
+            if data.type == .Login {
+                self.cookies.removeAll()
             }
-            self.semaphore.signal()
+            self.updateCookies(result.cookies)
+            return PFResult(html: htmlString)
+        } else {
+            let msg = "\(title.isEmpty ? data.type.rawValue : title)失败：\(result.error?.localizedDescription ?? data.url?.absoluteString ?? "")"
+            self.log?.print(text: msg, type: .Faild)
+            return PFResult(error: result.error)
         }
-        semaphore.wait()
-        return returnData ?? PFResult(error: .UnKnow)
     }
     
     /// 获取用户金钱数
     /// - Parameters:
     ///   - id: 用户id
     ///   - complete: 回调
-    class func userMoney(id: Int) -> Int {
+    class func userMoney(id: Int) async -> Int {
         guard id > 999 else { return -1 }
         let netData = PFNetworkData(header: PFNetworkData.defaultHeader, api: ["uid": "\(id)"], .Zone)
-        let data = PFNetwork().html(data: netData)
+        let data = await PFNetwork().html(data: netData)
         let regex = try! Regex("<li>金錢:\\s*<a href=\".*?\">(\\d+)</a>", options: [.ignoreCase])
         if let money = Int(regex.firstGroup(in: data.html) ?? "") {
             return money
@@ -308,20 +303,5 @@ extension PFNetwork {
         // 删除同名的cookie
         self.cookies.removeAll{ names.contains($0.name) }
         self.cookies += cookies
-        /*
-         // 删除同名的cookie，保留最新的
-         var newCookies = self.cookies + cookies
-         var names = Set<String>()
-         var removeIndex = [Int]()
-         for (index, value) in newCookies.enumerated() {
-             if names.contains(value.name) {
-                 removeIndex.append(index)
-             } else {
-                 names.insert(value.name)
-             }
-         }
-         removeIndex.reversed().forEach({ newCookies.remove(at: $0) })
-         self.cookies = newCookies
-        */
     }
 }

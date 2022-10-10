@@ -19,7 +19,7 @@ class PFUser {
     // 保存在数据文件中的Key
     fileprivate let saveKey: String
     // 历史金币
-    let historyMoney: Int
+    private(set) var historyMoney: Int
     // 金币
     var money: Int = 0
     // 序号
@@ -70,8 +70,6 @@ class PFUser {
         index = userConfig.value(key: "index", defaultValue: -1)
         let userId = userConfig.value(key: "user_id", defaultValue: 0)
         self.userId = userId
-        let _money = PFNetwork.userMoney(id: userId)
-        money = _money
         let oldDate = userConfig.value(key: "date", defaultValue: "")
         date = Date.today("YYYY-MM-dd")
         isToday = date == oldDate
@@ -80,7 +78,7 @@ class PFUser {
             userConfig = [:]
         }
         // 历史金币：第一次运行时，从网页获取，第二次运行时，从数据文件读取
-        historyMoney = userConfig.value(key: "history_money", defaultValue: _money)
+        historyMoney = userConfig.value(key: "history_money", defaultValue: -1)
         replyTimes = userConfig.value(key: "reply_times", defaultValue: 0)
         isVisitOtherZone = userConfig.value(key: "is_visit_other_zone", defaultValue: true)
         isLeaveMessage = userConfig.value(key: "is_leave_message", defaultValue: true)
@@ -91,14 +89,17 @@ class PFUser {
     
     /// 重新获取金币数
     /// - Returns: 金币是否增加
-    func reloadMoney() {
-        _ = moneyPlus()
+    func reloadMoney() async {
+        _ = await moneyPlus()
+        if historyMoney < 0 {
+            historyMoney = money
+        }
     }
     
     /// 金币增加数
-    func moneyPlus() -> Int {
+    func moneyPlus() async -> Int {
         for _ in [0...5] {
-            let tempMoney = PFNetwork.userMoney(id: userId)
+            let tempMoney = await PFNetwork.userMoney(id: userId)
             if tempMoney > -1 {
                 let number = tempMoney - money
                 money = tempMoney

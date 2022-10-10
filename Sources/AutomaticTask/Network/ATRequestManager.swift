@@ -99,7 +99,7 @@ struct ATResult {
 
     static let nilValue: ATResult = ATResult(data: nil, error: nil)
 
-    init(data: Data?, cookies: [HTTPCookie] = [], error: ATError?) {
+    init(data: Data? = nil, cookies: [HTTPCookie] = [], error: ATError? = nil) {
         self.data = data
         self.cookies = cookies
         self.error = error
@@ -114,8 +114,9 @@ class ATRequestManager {
     ///   - data: 请求URL数据
     ///   - faildTimes: 失败重试次数
     ///   - complete: 完成回调
-    func send(data: NetworkData, faildTimes:Int = 5, complete: ((ATResult) -> Void)?) {
-        dataTask(request: data.request, faildTimes: faildTimes, complete: complete)
+    func send(data: NetworkData, faildTimes:Int = 5) async -> ATResult {
+        guard let request = data.request else { return .nilValue }
+        return await dataTask(request: request, faildTimes: faildTimes)
     }
 
     /// 网络请求
@@ -123,30 +124,23 @@ class ATRequestManager {
     ///   - request: 请求的数据
     ///   - isUseCookie: 是否使用cookie
     ///   - faildTimes: 失败重试次数
-    ///   - complete: 回调
-    private func dataTask(request: URLRequest?, faildTimes:Int, complete: ((ATResult) -> Void)?) {
-        guard let request = request else {
-            complete?(.nilValue)
-            return
-        }
+    private func dataTask(request: URLRequest, faildTimes:Int) async -> ATResult {
         let configuration = URLSessionConfiguration.ephemeral
-        // configuration.timeoutIntervalForRequest = 10
         let session = URLSession(configuration: configuration)
-        let task = session.dataTask(with: request) { data, response, error in
-            var result = ATResult(data: data, error: ATError(error: error))
-            // request.httpShouldHandleCookies, 
-            if let url = response?.url, let httpResponse = response as? HTTPURLResponse, let fields = httpResponse.allHeaderFields as? [String: String] {
+        do {
+            let (data, response) = try await session.data(for: request)
+            var result = ATResult(data: data)
+            if let url = response.url, let httpResponse = response as? HTTPURLResponse, let fields = httpResponse.allHeaderFields as? [String: String] {
                 result.cookies = HTTPCookie.cookies(withResponseHeaderFields: fields, for: url)
             }
-            // 网络失败，且可以重试时
-            if let error = error, faildTimes > 0 {
+            return result
+        } catch {
+            if faildTimes > 0 {
                 print("\(faildTimes)-重试:\(error.localizedDescription)")
                 sleep(10)
-                self.dataTask(request: request, faildTimes: faildTimes-1, complete: complete)
-                return
+                return await self.dataTask(request: request, faildTimes: faildTimes - 1)
             }
-            complete?(result)
+            return ATResult(error: ATError(error: error))
         }
-        task.resume()
     }
 }

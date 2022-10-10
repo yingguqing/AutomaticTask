@@ -17,9 +17,6 @@ struct Repeat: ParsableCommand {
     @Flag(help: "抓取必应壁纸")
     var bingWallpaper = false
     
-    @Option(help: "音乐磁场签到")
-    var hifini:String?
-    
     @Option(help: "debug模式")
     var debug:String?
     
@@ -36,13 +33,6 @@ struct Repeat: ParsableCommand {
                 bw.run()
             }
             taskArray.append(bw)
-        }
-        
-        if let data = hifini?.data(using: .utf8), let json = data.json as? [String: String] {
-            // 音乐磁场签到
-            let hifini = HiFiNi(json: json)
-            hifini.run(isDebug: isDebug)
-            taskArray.append(hifini)
         }
 
         // 手机通知
@@ -72,7 +62,8 @@ struct Repeat: ParsableCommand {
                 print("任务超过最大时长。")
                 break
             }
-            sleep(10)
+            //sleep(10)
+            Thread.sleep(forTimeInterval: 10)
         }
         let time = Date().timeIntervalSince1970 - star
         print("总耗时：\(time.timeFromat)")
