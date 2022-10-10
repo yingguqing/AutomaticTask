@@ -57,34 +57,35 @@ class PFUser {
     // 发表分享的最大失败次数
     var maxShareFailTimes = 5
     
-    init?(json: [String: String], xor: String) {
-        let userName = json["username"]
-        let password = json["password"]
-        guard let userName = userName, !userName.isEmpty, let password = password, !password.isEmpty else {
+    init?(json: JSON, xor: String) {
+        let userName = json["username"].stringValue
+        let password = json["password"].stringValue
+        guard !userName.isEmpty, !password.isEmpty else {
             return nil
         }
         name = userName
         self.password = password
         saveKey = "HKPIC_CONFIG_\(userName.xorEncrypt(xor))".replacingOccurrences(of: "/", with: "$")
-        var userConfig = ATConfig.default.read(key: saveKey) as? [String: Any] ?? [:]
-        index = userConfig.value(key: "index", defaultValue: -1)
-        let userId = userConfig.value(key: "user_id", defaultValue: 0)
+        let config = ATConfig.default.read(key: saveKey) as? [String: Any] ?? [:]
+        var userConfig = JSON(config)
+        index = userConfig["index"].int ?? -1
+        let userId = userConfig["user_id"].intValue
         self.userId = userId
-        let oldDate = userConfig.value(key: "date", defaultValue: "")
+        let oldDate = userConfig["date"].stringValue
         date = Date.today("YYYY-MM-dd")
         isToday = date == oldDate
         if !isToday {
             // 如果数据不是今天的，就不读取，使用默认值
-            userConfig = [:]
+            userConfig = JSON([:])
         }
         // 历史金币：第一次运行时，从网页获取，第二次运行时，从数据文件读取
-        historyMoney = userConfig.value(key: "history_money", defaultValue: -1)
-        replyTimes = userConfig.value(key: "reply_times", defaultValue: 0)
-        isVisitOtherZone = userConfig.value(key: "is_visit_other_zone", defaultValue: true)
-        isLeaveMessage = userConfig.value(key: "is_leave_message", defaultValue: true)
-        isRecord = userConfig.value(key: "is_record", defaultValue: true)
-        journalTimes = userConfig.value(key: "journal_times", defaultValue: 0)
-        shareTimes = userConfig.value(key: "share_times", defaultValue: 0)
+        historyMoney = userConfig["history_money"].int ?? -1
+        replyTimes = userConfig["reply_times"].intValue
+        isVisitOtherZone = userConfig["is_visit_other_zone"].bool ?? true
+        isLeaveMessage = userConfig["is_leave_message"].bool ?? true
+        isRecord = userConfig["is_record"].bool ?? true
+        journalTimes = userConfig["journal_times"].intValue
+        shareTimes = userConfig["share_times"].intValue
     }
     
     /// 重新获取金币数

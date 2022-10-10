@@ -22,7 +22,7 @@ class PFConfig {
     
     /// 所有用户
     lazy var users: [PFUser] = {
-        let users = accounts.compactMap { PFUser(json: $0, xor: xor) }
+        let users = accounts.compactMap { PFUser(json: JSON($0), xor: xor) }
         guard users.count > 1 else { return users }
         // 循环互换用户id用来访问空间，因为访问空间会增加金币
         for (index, user) in users.enumerated() {
@@ -36,18 +36,18 @@ class PFConfig {
         return users
     }()
     
-    private init(json: [String: Any]) {
-        let xor = json["xor"] as? String ?? ""
+    private init(json: JSON) {
+        let xor = json["xor"].stringValue
         self.xor = xor
-        host = json["host"] as? String ?? ""
-        hostURL = json["hostURL"] as? String ?? ""
-        accounts = json["accounts"] as? [[String: String]] ?? []
-        let noticeIcon = json.value(key: "noticeIcon", defaultValue: "")
-        let groupName = json.value(key: "groupName", defaultValue: "")
+        host = json["host"].stringValue
+        hostURL = json["hostURL"].stringValue
+        accounts = json["accounts"].arrayObject as? [[String: String]] ?? []
+        let noticeIcon = json["noticeIcon"].stringValue
+        let groupName = json["groupName"].stringValue
         noticeValue = ATNotice.ATNoticeValue(groupName: groupName, icon: noticeIcon)
     }
     
-    func update(json: [String: Any]) {
+    func update(json: JSON) {
         PFConfig.default = PFConfig(json: json)
     }
     

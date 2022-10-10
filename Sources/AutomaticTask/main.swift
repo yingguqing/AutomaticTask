@@ -39,7 +39,7 @@ struct Repeat: ParsableCommand {
         ATNotice.default.noticeKey = notice
         
         // 比思签到
-        if let data = picForum?.data(using: .utf8), let json = data.json as? [String: Any] {
+        if let data = picForum?.data(using: .utf8), let json = try? JSON(data: data) {
             PFConfig.default.update(json: json)
             let pics = PFConfig.default.run(isDebug: isDebug)
             taskArray += pics
