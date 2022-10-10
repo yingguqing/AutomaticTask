@@ -24,10 +24,10 @@ jobs:
 
     steps:
     # 指定分支
-    - uses: actions/checkout@develop
+    - uses: actions/checkout@v2
     - uses: fwal/setup-swift@v1
       with:
-        swift-version: "5.5.2"
+        swift-version: "5.7"
     - name: Build
       run: swift build
     - name: Run
