@@ -9,8 +9,7 @@ import Foundation
 
 /// 发送手机通知。手机需要下载应用：Bark
 class ATNotice: ATBaseTask {
-    
-    static var `default`:ATNotice = ATNotice(noticeKey: "")
+    static var `default`: ATNotice = .init(noticeKey: "")
     
     // 通知Key
     var noticeKey: String?
@@ -24,7 +23,7 @@ class ATNotice: ATBaseTask {
         self.noticeKey = noticeKey
     }
     
-    var isValid:Bool {
+    var isValid: Bool {
         return noticeKey?.isEmpty == false && targetCounts > 0
     }
     
@@ -39,12 +38,13 @@ class ATNotice: ATBaseTask {
             finish(true)
             return
         }
-        var data = ATNoticeApiData(noticeKey: noticeKey, text: text)
-        data.title = title
-        data.icon = icon
-        data.group = group
-        //print(data.url?.absoluteString ?? "notice------------------------")
-        ATRequestManager.default.send(data: data) { result in
+        Task {
+            var data = ATNoticeApiData(noticeKey: noticeKey, text: text)
+            data.title = title
+            data.icon = icon
+            data.group = group
+            // print(data.url?.absoluteString ?? "notice------------------------")
+            let result = await ATRequestManager.default.send(data: data)
             let json = result.data?.json as? [String: Any]
             let code = json?["code"] as? Int
             if code != 200 {
@@ -65,7 +65,7 @@ class ATNotice: ATBaseTask {
     /// 往通知列表中插入一条
     /// - Parameters:
     ///   - value: 通知内容
-    func addNotice(_ value:ATNoticeValue) {
+    func addNotice(_ value: ATNoticeValue) {
         _wait(); defer { _signal() }
         notices.append(value)
     }
@@ -85,9 +85,9 @@ class ATNotice: ATBaseTask {
         let allTitles = Set(notices.map({ $0.title }))
         for title in allTitles {
             let notices = self.notices.filter({ $0.title == title })
-                // 对通知进行排序
+            // 对通知进行排序
             let sortList = notices.sorted(by: { $0.index < $1.index })
-                // 把列表中的消息拼接
+            // 把列表中的消息拼接
             let text = sortList.map { $0.text }.joined(separator: "\n")
             let notice = notices.first!
             sendNotice(text: text, title: notice.title, icon: notice.icon, group: notice.groupName)
@@ -96,15 +96,14 @@ class ATNotice: ATBaseTask {
 }
 
 extension ATNotice {
-    
     /// 通知消息数据
     struct ATNoticeValue {
-        var title:String = ""
-        let groupName:String
-        let icon:String
+        var title: String = ""
+        let groupName: String
+        let icon: String
         var text: String = ""
         var index: Int = 99
-        init(groupName:String, icon:String) {
+        init(groupName: String, icon: String) {
             self.groupName = groupName
             self.icon = icon
         }

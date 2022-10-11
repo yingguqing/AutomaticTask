@@ -7,13 +7,16 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest #ubuntu-latest macos-latest
+    runs-on: macos-latest #ubuntu-latest macos-latest
 
     steps:
+    # 指定分支
     - uses: actions/checkout@v2
+      with:
+        ref: develop
     - uses: fwal/setup-swift@v1
       with:
-        swift-version: "5.5.2"
+        swift-version: "5.7"
     - name: Build
       run: swift build
     - name: Run

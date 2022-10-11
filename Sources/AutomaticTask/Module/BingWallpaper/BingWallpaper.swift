@@ -54,10 +54,11 @@ class BingWallpaper: ATBaseTask {
     }
     
     func run() {
-        BWNetwork.default.getWallPaper { json in
+        Task {
+            let json = await BWNetwork.default.getWallPaper()
             if let todayJson = json?["images"] as? [[String: Any]], let first = todayJson.first {
                 var today = BingWallpaper.BWImage(json: first)
-                today.url = BWNetwork.default.host.urlAppendPathComponent(today.url) 
+                today.url = BWNetwork.default.host.urlAppendPathComponent(today.url)
                 self.save(image: today)
             } else {
                 self.log.print(text: "网络数据解析失败", type: .Faild)
