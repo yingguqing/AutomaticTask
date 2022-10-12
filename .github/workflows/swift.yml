@@ -1,10 +1,10 @@
 name: 自动任务
 
 on:
-  #[push]
+  [push]
   #workflow_dispatch
   # 定时任务
-  schedule:
+  #schedule:
   #         ┌───────────────────── minute (0 - 59)
   #         │ ┌─────────────────── hour (0 - 23)
   #         │ │ ┌───────────────── day of the month (1 - 31)
@@ -14,7 +14,7 @@ on:
   #         │ │ │ │ │
   #         │ │ │ │ │
   #         * * * * *
-  - cron:  '0 17 * * *'
+  #- cron:  '0 17 * * *'
 
 
 jobs:
