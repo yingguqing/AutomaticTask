@@ -1,10 +1,10 @@
 name: 自动任务
 
 on:
-  #[push]
+  [push]
   #workflow_dispatch
   # 定时任务
-  schedule:
+  #schedule:
   #         ┌───────────────────── minute (0 - 59)
   #         │ ┌─────────────────── hour (0 - 23)
   #         │ │ ┌───────────────── day of the month (1 - 31)
@@ -14,7 +14,7 @@ on:
   #         │ │ │ │ │
   #         │ │ │ │ │
   #         * * * * *
-  - cron:  '0 17 * * *'
+  #- cron:  '0 17 * * *'
 
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
         ref: main
     - uses: fwal/setup-swift@v1
       with:
-        swift-version: "5.7"
+        swift-version: "5.5.2"
     - name: Build
       run: swift build
     - name: Run
