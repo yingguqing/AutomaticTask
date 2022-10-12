@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "AutomaticTask",
     platforms: [
-        .macOS(.v12),
+        .macOS(.v11),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.0.0"),
@@ -22,8 +22,5 @@ let package = Package(
                 .copy("Module/BingWallpaper/bing-wallpaper.json"),
                 .copy("Module/BingWallpaper/README.md")
             ]),
-        .testTarget(
-            name: "AutomaticTaskTests",
-            dependencies: ["AutomaticTask"]),
     ]
 )
