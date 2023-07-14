@@ -33,25 +33,27 @@ enum PicType: String {
     }
 }
 
-// 比思
+/// 比思
 class PicForum: ATBaseTask {
-    // 开始时间
+    /// 开始时间
     let starTime: Double = Date().timeIntervalSince1970
-    // 休息时长
+    /// 休息时长
     var sleepTime: UInt32 = 0
-    // 用户
+    /// 用户
     let user: PFUser
-    // 提交内容时需要
+    /// 提交内容时需要
     var formhash = ""
-    // 是否需要签到
+    /// 是否需要签到
     var isSignIn = false
-    // 记录发表状态，用于休息
+    /// 记录发表状态，用于休息
     var isSend = false
-    // 日志系统
+    /// 日志系统
     let log: ATPrintLog
-    // 帖子较多的板块
+    /// 失败时，是否输出当前的html内容
+    var isPrintHtmlForFaild:Bool = false
+    /// 帖子较多的板块
     lazy var fids = [2, 10, 11, 18, 20, 31, 42, 50, 79, 117, 123, 135, 142, 153, 239, 313, 398, 445, 454, 474, 776, 924].shuffled()
-    // 所有评论内容，随机使用
+    /// 所有评论内容，随机使用
     lazy var comments = [
         "走过了年少，脚起了水泡。", "人生自古谁无死，啊个拉屎不用纸！", "如果跟导师讲不清楚，那么就把他搞胡涂吧！",
         "不要在一棵树上吊死，在附近几棵树上多试试死几次。", "老天，你让夏天和冬天同房了吧？生出这鬼天气！",
@@ -83,9 +85,9 @@ class PicForum: ATBaseTask {
         "我靠！看来医生是都疯了！要不怎么让他出院了！", "打破老婆终身制，实行小姨股份制。引入小姐竞争制，推广情人合同制。"
     ].shuffled()
     
-    // 网络请求的默认数据
+    /// 网络请求的默认数据
     lazy var defaultData: PFNetwork.PFNetworkData = PFNetwork.PFNetworkData(header: PFNetwork.PFNetworkData.defaultHeader, .Home)
-    // 网络
+    /// 网络
     lazy var network: PFNetwork = {
         let net = PFNetwork()
         net.log = log
@@ -196,7 +198,7 @@ class PicForum: ATBaseTask {
             await forum()
             return true
         } else {
-            log.print(texts: ["登录失败", data.html], type: .Faild)
+            log.print(texts: ["登录失败", isPrintHtmlForFaild ? data.html : ""], type: .Faild)
             return false
         }
     }
@@ -219,7 +221,7 @@ class PicForum: ATBaseTask {
                 // 网络数据没有返回，但是签到后金币增加了，表示签到成功
                 log.print(text: "[恭喜你簽到成功!獲得隨機獎勵 金錢 \(plus)]", type: .Success)
             } else {
-                log.print(texts: ["签到失败", data.html], type: .Faild)
+                log.print(texts: ["签到失败", isPrintHtmlForFaild ? data.html : ""], type: .Faild)
                 // 直接再签一到次，不管结果
                 await network.html(data: param)
             }
@@ -299,7 +301,7 @@ class PicForum: ATBaseTask {
         } else if data.findSuccess(txt: "主題自動關閉，不再接受新回復") {
             return false
         } else {
-            log.print(texts: ["发表评论失败"] + data.errorData, type: .Faild)
+            log.print(texts: ["发表评论失败"] + data.errorData(isPrintHtmlForFaild), type: .Faild)
             user.maxReplyFailTimes -= 1
             
             if !data.cdata.filter({ $0.contains("您目前處於見習期間") }).isEmpty {
@@ -347,7 +349,7 @@ class PicForum: ATBaseTask {
                 await deleteMessage(cId: id)
             }
         } else {
-            log.print(texts: data.errorData, type: .Faild)
+            log.print(texts: data.errorData(isPrintHtmlForFaild), type: .Faild)
             if !data.cdata.filter({ $0.contains("您目前沒有權限進行評論") }).isEmpty {
                 user.shareTimes = 888
                 user.journalTimes = 888
@@ -386,7 +388,7 @@ class PicForum: ATBaseTask {
             log.debugPrint(text: "删除留言成功", type: .Success)
             waitSleep(type: .Other)
         } else {
-            log.print(texts: data.errorData, type: .Faild)
+            log.print(texts: data.errorData(isPrintHtmlForFaild), type: .Faild)
             log.print(text: "删除留言失败", type: .Faild)
         }
     }
@@ -430,7 +432,7 @@ class PicForum: ATBaseTask {
         if data.findSuccess() {
             log.debugPrint(text: "一条动态删除成功", type: .Success)
         } else {
-            log.print(texts: data.errorData, type: .Faild)
+            log.print(texts: data.errorData(isPrintHtmlForFaild), type: .Faild)
             log.print(text: "删除动态失败", type: .Faild)
         }
     }
@@ -628,7 +630,7 @@ class PicForum: ATBaseTask {
                 await delShare(sid: sid)
             }
         } else {
-            log.print(texts: ["发布分享失败"] + data.errorData, type: .Faild)
+            log.print(texts: ["发布分享失败"] + data.errorData(isPrintHtmlForFaild), type: .Faild)
             user.maxShareFailTimes -= 1
             if !data.cdata.filter({ $0.contains("您目前沒有權限發佈分享") }).isEmpty {
                 user.shareTimes = 888
@@ -656,7 +658,7 @@ class PicForum: ATBaseTask {
         if data.findSuccess() {
             log.debugPrint(text: "删除分享成功", type: .Success)
         } else {
-            log.print(texts: data.errorData, type: .Faild)
+            log.print(texts: data.errorData(isPrintHtmlForFaild), type: .Faild)
             log.print(text: "删除分享失败", type: .Faild)
         }
     }

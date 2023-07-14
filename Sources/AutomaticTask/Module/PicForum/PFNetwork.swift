@@ -33,8 +33,17 @@ struct PFResult {
         return item
     }
     
-    var errorData: [String] {
-        return cdata.isEmpty ? [html] : cdata
+    /// 错误信息
+    /// - Parameter isPrintHtmlForFaild: 是否输出当前的html
+    /// - Returns: 结果
+    func errorData(_ isPrintHtml:Bool) -> [String] {
+        if !cdata.isEmpty {
+            return cdata
+        } else if isPrintHtml {
+            return [html]
+        } else {
+            return []
+        }
     }
     
     func findSuccess(txt: String = "操作成功") -> Bool {
