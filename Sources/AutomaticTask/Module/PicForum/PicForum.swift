@@ -117,22 +117,22 @@ class PicForum: ATBaseTask {
             await signIn()
             // 评论
             await forumList(true)
-            // 访问别人空间并留言
+            // 访问别人空间
             await visitUserZone()
             // 留言
-            await leavMessage()
+            // await leavMessage()
             // 发表一条记录
-            await record()
+            // await record()
             // 删除发表的记录
-            await deleteRecord()
+            // await deleteRecord()
             // 发表日志
-            await journal()
+            // await journal()
             // 删除脚本发表的日志
-            await delJournal()
+            // await delJournal()
             // 发表分享
-            await share()
+            // await share()
             // 删除自己空间留言所产生的动态
-            await deleteAllleavMessageDynamic()
+            // await deleteAllleavMessageDynamic()
             await user.reloadMoney()
             user.save()
             log.print(text: "金钱：\(user.moneyAddition(1))", type: .Cyan)
