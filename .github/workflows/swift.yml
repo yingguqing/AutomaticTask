@@ -33,7 +33,8 @@ jobs:
     - name: Build
       run: /usr/bin/swift build
     - name: Run
-      run: /usr/bin/swift run AutomaticTask --bing-wallpaper --debug ${{ secrets.DEBUG }} --pic-forum ${{ secrets.PIC  }}
+      run: /usr/bin/swift run AutomaticTask --bing-wallpaper --debug ${{ secrets.DEBUG }} 
+      #  --pic-forum ${{ secrets.PIC  }}
       #  --notice ${{ secrets.NOTICE }}
 
     - name: Commit files
